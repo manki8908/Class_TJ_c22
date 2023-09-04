@@ -1,0 +1,227 @@
+의사결정나무
+
+자연어 처리 프로젝트(2차 프로젝트)
+	프로젝트 주제 선정, 조편성
+	프로젝트 계획서 작성
+
+
+
+
+
+
+
+
+
+
+
+
+
+model = DecisionTreeClassifier(random_state=2,max_depth=3,criterion='entropy')
+						가치치기		
+
+	entropy	0.0 ~ 1.0
+	gini    0.0 ~ 0.5
+
+DecisionTreeClassifier
+	분류
+DecisionTreeRegressor
+	회귀
+
+
+
+
+
+from sklearn.tree import DecisionTreeClassifier
+#model=DecisionTreeClassifier(random_state=2, max_depth=3, criterion='entropy')
+model=DecisionTreeClassifier(random_state=2, criterion='entropy')
+model.fit(X_train,y_train)
+print(model.score(X_train,y_train))
+print(model.score(X_test,y_test))
+
+0.9066666666666666
+0.92
+
+1.0
+0.92
+
+	혼잡
+	최소	최대	
+	0.0	1.0
+
+
+	0	1
+	100	0
+	50	50
+
+
+from math import log2, ceil 
+p=0.5 
+h=-log2(p)
+print(p) #확률
+print(h,ceil(h)) #정보량 1bit
+
+
+
+
+
+
+
+v = [0,1,0,1] #2개 클래스가 균등하게 섞여 있으면 지니 계수는 0.5
+print(gini(v))
+v = [1,1,1,1] #1개 클래스만으로 100% 구성되어 있으면 지니 계수는 0
+print(gini(v))
+v = [1,0,1,1]
+print(gini(v))
+
+
+
+
+
+from sklearn.linear_model import LogisticRegression
+model=LogisticRegression().fit(X,y)
+y_hat=model.predict(X)
+print(y) #실제값
+print(y_hat) #출력값
+print(model.score(X,y))
+f_value=model.decision_function(X) #판별함수
+print(f_value)
+print(model.predict(X))
+
+[ 1.46512894 -1.03203074 -0.7355014   0.90163222  0.90811712 -1.10892301
+  1.28523411 -2.9451636   1.29344604  2.10010735  2.4718164  -2.1000621
+  0.16408684 -1.18284583 -0.64727888 -0.9956665 ]
+[1 0 0 1 1 0 1 0 1 1 1 0 1 0 0 0]
+
+
+
+from sklearn.metrics import roc_curve
+#판별함수의 기준값을 바꾸어 tpr, fpr을 계산
+fpr,tpr,thresholds=roc_curve(y, model.decision_function(X))
+fpr,tpr,thresholds 
+
+'DecisionTreeClassifier' object has no attribute 'decision_function'
+
+
+from sklearn.linear_model import LogisticRegression 
+model1=LogisticRegression(random_state=0, max_iter=1000)
+model1.fit(X_train,y_train)
+print(model1.score(X_train,y_train))
+print(model1.score(X_test,y_test))
+
+
+
+
+array([-3.91525645, -0.81820747, -4.1047279 , -0.22906842,  1.21657118])
+
+array([0, 0, 0, 0, 1], dtype=int64)
+
+   0확률          1확률
+[[1.        , 0.        ],
+
+         0          1             2
+[[ 6.77639365  3.0296375  -9.80603115]
+ [-5.93382416  1.17317967  4.76064449]
+ [ 6.62628641  2.67678173 -9.30306813]]
+[0 2 0]
+
+
+from sklearn.metrics import roc_curve 
+from sklearn.preprocessing import label_binarize 
+y=label_binarize(y,classes=[0,1,2])
+y[::20]
+	start:stop:step
+	     :    :20
+
+
+DecisionTreeRegressor	회귀모형
+
+X_train=X_train0['date'][:, None] ==> X_train=X_train0['date'].values
+
+
+tree = DecisionTreeRegressor().fit(X_train.reshape(-1,1), y_train)
+lr = LinearRegression().fit(X_train.reshape(-1,1), y_train) 
+svr = SVR(kernel='rbf').fit(X_train.reshape(-1,1), y_train) 
+
+
+
+import numpy as np 
+X_train0=df[df['date']<2000]
+X_test=df[df['date']>=2000]
+X_train=X_train0['date'].values
+y_train=np.log(X_train0['price'])
+y_test=np.log(X_test['price'])
+
+
+
+
+
+
+
+
+
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import LinearRegression 
+from sklearn.svm import SVR 
+tree = DecisionTreeRegressor().fit(X_train.reshape(-1,1), y_train)
+lr = LinearRegression().fit(X_train.reshape(-1,1), y_train) 
+#svr = SVR(kernel='linear').fit(X_train, y_train)
+svr = SVR(kernel='rbf').fit(X_train.reshape(-1,1), y_train) 
+
+	kernel='linear'  선형모형
+		rbf	 비선형
+
+#전체 기간의 자료
+x_all = np.array(df['date']).reshape(-1, 1)
+pred_tree = tree.predict(x_all)
+price_tree = np.exp(pred_tree) # log값 되돌리기
+pred_lr = lr.predict(x_all)
+price_lr = np.exp(pred_lr) # log값 되돌리기
+
+pred_svr = svr.predict(x_all)
+price_svr = np.exp(pred_svr) # log값 되돌리기
+
+X_train.reshape(-1,1)
+                행 열
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

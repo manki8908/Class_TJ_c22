@@ -1,0 +1,292 @@
+의사결정나무
+
+자연어 처리 프로젝트(2차 프로젝트)
+	프로젝트 주제 선정, 조편성
+	프로젝트 계획서 작성
+
+
+import numpy as np
+
+X_train=np.array(X_train)
+X_test=np.array(X_test)
+
+
+
+train_cols=df.columns[1:-1]
+                      start:stop
+
+			0	1	2	....	-2	-1
+X=df[train_cols]
+y=df['Class']
+y.value_counts()
+
+
+0    284315
+1       492
+
+
+
+
+
+
+
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import VotingClassifier
+from sklearn.tree import DecisionTreeClassifier 
+from sklearn.neighbors import KNeighborsClassifier
+import numpy as np 
+
+model1=LogisticRegression(random_state=1, max_iter=1000)
+model2=DecisionTreeClassifier(random_state=1)
+model3=KNeighborsClassifier(n_neighbors=1)
+ensemble=VotingClassifier(estimators=[('lr',model1),('tree',model2),('knn',model3)],voting='soft')
+
+X_train=np.array(X_train)
+X_test=np.array(X_test)
+
+
+
+
+from sklearn.metrics import classification_report
+pred=model1.predict(X_test)
+print(classification_report(y_test, pred))
+
+
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00     56868
+           1       0.88      0.67      0.76        94
+
+    accuracy                           1.00     56962
+   macro avg       0.94      0.84      0.88     56962
+weighted avg       1.00      1.00      1.00     56962
+
+              precision    recall  f1-score   support
+
+           0       0.93      0.93      0.93       102
+           1       0.93      0.93      0.93        95
+
+    accuracy                           0.93       197
+   macro avg       0.93      0.93      0.93       197
+weighted avg       0.93      0.93      0.93       197
+
+
+
+0    492
+1    492
+
+
+
+LogisticRegression(max_iter=1000, random_state=1)
+0.9529860228716646
+0.9289340101522843
+
+DecisionTreeClassifier(random_state=1)
+1.0
+0.9289340101522843
+
+KNeighborsClassifier(n_neighbors=1)
+1.0
+0.9289340101522843
+
+VotingClassifier(estimators=[('lr',
+                              LogisticRegression(max_iter=1000,
+                                                 random_state=1)),
+                             ('tree', DecisionTreeClassifier(random_state=1)),
+                             ('knn', KNeighborsClassifier(n_neighbors=1))],
+                 voting='soft')
+1.0
+0.949238578680203
+
+
+			단일모형				여러개
+model3=BaggingClassifier(DecisionTreeClassifier(), n_estimators=100, random_state=0)
+
+model4=BaggingClassifier(KNeighborsClassifier(n_neighbors=2), n_estimators=10, random_state=0)
+
+model5=BaggingClassifier(SVC(), n_estimators=10, random_state=0)
+
+
+
+
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+model1=DecisionTreeClassifier(random_state=0)
+model2=RandomForestClassifier(n_estimators=100,random_state=0)
+				분류기 100개
+
+	부트스트랩
+		복원추출
+		비복원추출
+
+for model in (model1, model2):
+    print(model)
+    model.fit(X_train,y_train)
+    print(model.score(X_train,y_train))
+    print(model.score(X_test,y_test))
+    print()
+
+
+DecisionTreeClassifier(random_state=0)
+1.0
+0.6071428571428571
+
+RandomForestClassifier(random_state=0)
+1.0
+0.75
+
+
+
+from sklearn.ensemble import ExtraTreesClassifier
+model3=ExtraTreesClassifier(n_estimators=100,random_state=0)
+		모든 샘플, 변수 다양하게
+for model in (model1, model2, model3):
+    print(model)
+    model.fit(X_train,y_train)
+    print(model.score(X_train,y_train))
+    print(model.score(X_test,y_test))
+    print()
+
+
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+model1=DecisionTreeClassifier(random_state=0)
+model2=SVC(kernel='linear')
+		linear	선형 
+		rbf	비선형
+
+model3=BaggingClassifier(DecisionTreeClassifier(), n_estimators=100, random_state=0)
+model4=BaggingClassifier(KNeighborsClassifier(n_neighbors=2), n_estimators=10, random_state=0)
+model5=BaggingClassifier(SVC(kernel='linear'), n_estimators=10, random_state=0)
+for model in (model1, model2, model3, model4, model5):
+    print(model)
+    model.fit(X_train,y_train)
+    print(model.score(X_train,y_train))
+    print(model.score(X_test,y_test))
+    print()
+
+
+
+DecisionTreeClassifier(random_state=0)
+1.0
+0.845360824742268
+
+SVC(kernel='linear')
+0.7707253886010362
+0.7422680412371134
+
+BaggingClassifier(estimator=DecisionTreeClassifier(), n_estimators=100,
+                  random_state=0)
+1.0
+0.8917525773195877
+
+BaggingClassifier(estimator=KNeighborsClassifier(n_neighbors=2), random_state=0)
+0.8963730569948186
+0.6288659793814433
+
+BaggingClassifier(estimator=SVC(kernel='linear'), random_state=0)
+0.772020725388601
+0.7525773195876289
+
+from sklearn.ensemble import AdaBoostClassifier
+#분류기수 최대 100개, 기본모형 tree 
+model_ada=AdaBoostClassifier(n_estimators=100,random_state=0)
+model_ada.fit(X_train,y_train)
+print(model_ada.predict(X_test))
+print(model_ada.score(X_train,y_train))
+print(model_ada.score(X_test,y_test))
+
+
+
+import numpy as np 
+import matplotlib.pyplot as plt 
+def plot_tree(model):
+    n_features=X.shape[1]
+		변수 개수
+    plt.barh(range(n_features),model.feature_importances_,align='center')
+					변수의 특성 중요도
+    plt.yticks(np.arange(n_features),train_cols)
+    plt.ylim(-1, n_features)
+
+from sklearn.svm import SVC 
+svc=SVC(probability=True, kernel='linear')
+model_svc=AdaBoostClassifier(algorithm='SAMME',n_estimators=50,estimator=svc)
+model_svc.fit(X_train,y_train)
+print(model_svc.predict(X_test))
+print(model_svc.score(X_train,y_train))
+print(model_svc.score(X_test,y_test))
+
+
+
+CPU times: total: 219 ms
+Wall time: 217 ms
+
+
+from sklearn.ensemble import RandomForestClassifier
+forest=RandomForestClassifier(n_estimators=6, random_state=2, 
+				분류기수
+criterion='entropy',max_depth=3)
+  분류기준		가지치기
+forest.fit(X_train,y_train)
+print(forest.score(X_train,y_train))
+print(forest.score(X_test,y_test))
+
+
+[DecisionTreeClassifier(criterion='entropy', max_depth=3, max_features='sqrt',
+                        random_state=1872583848),
+ DecisionTreeClassifier(criterion='entropy', max_depth=3, max_features='sqrt',
+                        random_state=794921487),
+ DecisionTreeClassifier(criterion='entropy', max_depth=3, max_features='sqrt',
+                        random_state=111352301),
+ DecisionTreeClassifier(criterion='entropy', max_depth=3, max_features='sqrt',
+                        random_state=1853453896),
+ DecisionTreeClassifier(criterion='entropy', max_depth=3, max_features='sqrt',
+                        random_state=213298710),
+ DecisionTreeClassifier(criterion='entropy', max_depth=3, max_features='sqrt',
+                        random_state=1922988331)]
+
+
+import numpy as np 
+idx=0
+result=[]
+for f in forest.estimators_:
+		분류기 6개
+    result.append(f.score(X_test,y_test))
+    idx+=1
+print(result)    
+print(max(result))
+print(np.argmax(result))
+
+
+
+from imblearn.under_sampling import RandomUnderSampler 
+X_sample,y_sample=RandomUnderSampler(random_state=0).fit_resample(X,y)
+X_samp=pd.DataFrame(data=X_sample,columns=X.columns)
+X_samp=pd.get_dummies(X_samp,columns=X_samp.columns,drop_first=True) 
+y_samp=pd.DataFrame(data=y_sample,columns=['class'])
+df_samp=pd.concat([X_samp,y_samp],axis=1)
+df_samp.head()
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

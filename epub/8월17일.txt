@@ -1,0 +1,263 @@
+SVM
+회귀분석
+
+자연어 처리 프로젝트(2차 프로젝트)
+	주제 선정
+	데이터 수집, 전처리
+	기계학습 모형, 평가
+	응용프로그램에 배포
+	발표 준비
+
+from sklearn.preprocessing import StandardScaler
+ss = StandardScaler() 평균 0/표준 1
+ss.fit(X_train)	패턴 분석
+X_train_scaled = ss.transform(X_train) 변환
+X_test_scaled = ss.transform(X_test)
+
+
+
+
+logit.predict_proba(X_test_scaled)
+
+	0확률		1확률
+array([[0.22736377, 0.77263623],	=> 1
+       [0.05045422, 0.94954578],	=> 1
+
+
+	판별함수
+logit.decision_function(X_test_scaled)
+
+	0 기준
+array([ 1.22325709,  2.93491726,  3.83066224,  1.96848533,  1.12359289,
+        0.70216411, -2.25670368,  2.96865476, -2.39700086,  1.1108299 ,
+
+
+pred=logit.decision_function(X_test_scaled)
+		판별함수
+fpr, tpr, thresh = metrics.roc_curve(y_test.values, pred)
+auc = metrics.roc_auc_score(y_test, pred)
+
+	면적 1x1=1
+
+plt.plot(fpr,tpr,label="logit, auc="+str(f'{auc:.2f}'))
+
+
+
+	model.score()
+	classification_report()
+
+
+
+
+
+
+		Q1	Q2	Q3
+	0	25	50	75	100
+
+
+
+		IQR = Q3-Q1
+
+
+
+
+
+from sklearn.ensemble import BaggingClassifier
+from sklearn.svm import SVC
+#svm 모형은 데이터의 양이 많을 경우 많은 메모리를 사용하여 속도가 매우 느려질 수 있으므로
+#BaggingClassifier를 사용하는 것을 권장함
+#  1개의 기계학습모형이지만 데이터 샘플을 중복사용하여 서로 다른 결과를 출력하는 다수의 모형을 비교
+svm = SVC()
+n_estimators = 10
+model = BaggingClassifier(estimator=svm,
+				분류기
+                          n_estimators=n_estimators,
+				분류기수
+                          max_samples=1/n_estimators,
+				부트스트랩 bootstrap
+                          n_jobs=-1)
+				cpu core -1 100%
+model.fit(X_train_scaled,y_train)
+print(model.score(X_train_scaled,y_train))
+print(model.score(X_test_scaled,y_test))
+
+귀무가설(H0) : 교육시간이 업무 능력 점수에 영향을 주지 않는다.
+대립가설(H1) : 교육시간이 업무 능력 점수에 영향을 준다.		=> 내 주장
+
+	반증법
+
+	기각
+	채택
+
+	p-value 점근유의확률	0.05 95% 신뢰수준
+
+	유의
+
+
+from scipy import stats
+X =[3.52,2.58,3.31,4.07,4.62,3.98,4.29, 4.83, 3.71, 4.61, 3.90, 3.20]
+y =[2.48,2.27,2.47,2.77,2.98,3.05,3.18, 3.46, 3.03, 3.25, 2.67, 2.53]
+result=stats.linregress(X, y)
+
+		독립	종속
+		X	y
+		변화유발	결과
+
+		단순회귀 - 독립변수 1개
+		다중회귀 -        여러개
+
+
+result
+
+
+LinregressResult(slope=0.4956032360182905, intercept=0.9195814280689418, 
+			기울기			절편
+rvalue=0.8929235125385305, pvalue=9.238421943157891e-05, stderr=0.07901935226531728, 
+	모형의 설명력		유의확률 0.05
+	0.0 ~ 1.0
+
+intercept_stderr=0.3110591892275586)
+
+	9.238421943157891e-05 => 0에 가까운 값
+
+
+plt.plot(x1, slope*x1 + intercept, c='r') 
+	
+	f(x) = 기울기 * x + 절편	
+	f(4) = 0.4956032360182905 * 4 + 0.9195814280689418
+
+4*slope + intercept 
+
+
+
+
+
+
+
+
+
+
+
+https://vincentarelbundock.github.io/Rdatasets/csv/HistData/Guerry.csv
+
+
+model = smf.ols(formula='Crime_prop ~ Literacy + Wealth + Distance', data=df2).fit()
+			  종속       ~ 독립
+
+
+import seaborn as sns 
+import matplotlib.pyplot as plt 
+sns.regplot(x='Literacy',y='Crime_prop',data=df,color='r') #회귀플롯
+
+
+
+
+df.dropna(inplace=True) #결측값 제거
+	NA : Not Available 결측값
+
+
+df.shape 
+
+
+
+
+
+Dep. Variable:	Crime_prop	R-squared:	0.277
+Model:	OLS			Adj. R-squared:	0.250
+				모델의 설명력 0.0 ~ 1.0
+
+import statsmodels.formula.api as smf 
+model=smf.ols(formula='Crime_prop ~ Literacy + Wealth + Distance',data=df2).fit()
+model.summary()
+
+	Crime_prop ~ Literacy + Wealth + Distance
+	종속변수
+	범죄율
+
+
+
+		coef		std err	t	P>|t|	[0.025	0.975]
+		회귀계수
+		기울기
+
+Literacy	-41.6264	17.664	-2.357	0.021	-76.773	-6.480
+문해율
+Wealth		43.4753		12.868	3.378	0.001	17.871	69.080
+재산세 순위
+Distance	2.4385		3.158	0.772	0.442	-3.845	8.722
+수도와의 거리
+
+
+from sklearn.linear_model import LinearRegression 
+model=LinearRegression()
+X=df[['Literacy','Wealth','Distance']]
+y=df['Crime_prop']
+model.fit(X,y)
+
+
+
+literacy=80 #문해율
+wealth=1 #재산세 순위
+distance=20 #수도와의 거리 
+regionA=[literacy,wealth,distance]
+crimeA=model.predict([regionA])
+crimeA  # 3880명당 범죄 1건
+
+
+
+literacy=10
+wealth=70
+distance=500
+regionB=[literacy,wealth,distance]
+crimeB=model.predict([regionB])
+crimeB 
+
+from sklearn.impute import SimpleImputer
+imputer = SimpleImputer(strategy="mean")
+			숫자, 정규분포 - 평균 mean
+			숫자, 비정규    중위수 median
+			카테고리,      최빈수
+
+df3 = pd.DataFrame(imputer.fit_transform(df2),
+columns=df2.columns)
+df3
+	loc 필드명
+	iloc 숫자 인덱스
+
+	[:, ...]
+	모든행
+
+X=df.loc[:, ['Rooms','Distance','Bedroom2','Bathroom','Car','Landsize','BuildingArea','Propertycount']]
+y=df['Price']
+df2=pd.concat([X,y],axis=1)
+
+
+
+import statsmodels.api as sm 
+model=sm.OLS(y,X) 
+
+		y ~ X
+		종속 ~ 독립
+
+result=model.fit()
+result.summary()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

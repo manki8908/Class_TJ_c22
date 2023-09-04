@@ -1,0 +1,950 @@
+Django 실습	
+	회원관리
+
+챗봇 만들기
+
+자연어 처리 프로젝트(2차 프로젝트)
+
+
+
+
+
+concat = concatenate([pool1, pool2, pool3])
+
+	이종결합
+		정형+비정형
+	정형
+	비정형
+
+
+conv1 = Conv1D(
+    filters=128,
+    kernel_size=3,
+    padding='valid',
+    activation=tf.nn.relu)(dropout_emb)
+pool1 = GlobalMaxPool1D()(conv1)
+conv2 = Conv1D(
+    filters=128,
+    kernel_size=4,
+    padding='valid',
+    activation=tf.nn.relu)(dropout_emb)
+pool2 = GlobalMaxPool1D()(conv2)
+conv3 = Conv1D(
+    filters=128,
+    kernel_size=5,
+    padding='valid',
+    activation=tf.nn.relu)(dropout_emb)
+
+
+model = Model(inputs=[정형, 이미지 ], outputs=predictions)
+
+
+		
+
+from django.db import models
+
+
+class Member(models.Model):
+	클래스=>테이블
+    userid = models.CharField(max_length=50, null=False, primary_key=True)
+	필드명 = 자료형
+    passwd = models.CharField(max_length=500, null=False)
+    name = models.CharField(max_length=20, null=False)
+    address = models.CharField(max_length=20, null=False)
+    tel = models.CharField(max_length=20, null=True)
+
+
+
+
+
+select * from tab;
+
+desc mymember_member;
+
+	앱이름_클래스이름
+
+python manage.py runserver
+
+
+
+
+
+from django.shortcuts import render, redirect
+from mymember.models import Member
+import hashlib
+
+	비연결성
+
+	세션, 쿠키
+	서버  클라이언트
+
+
+def home(request):
+    if 'userid' not in request.session.keys():
+	변수명                   세션
+        return render(request, 'mymember/login.html')
+    else:
+        return render(request, 'mymember/main.html')
+
+
+def login(request):
+    if request.method == 'POST':
+        userid = request.POST['userid']
+        passwd = request.POST['passwd']
+        passwd = hashlib.sha256(passwd.encode()).hexdigest()
+			비번 암호화
+        row = Member.objects.filter(userid=userid, passwd=passwd)[0]
+				검색
+		select * mymember_member where userid='kim' and passwd='1234'
+        if row is not None:
+		로그인 성공
+            request.session['userid'] = userid
+		세션에 등록
+            request.session['name'] = row.name
+            return render(request, 'mymember/main.html')
+        else: 로그인 실패
+            return render(request, 'mymember/login.html',
+                          {'msg': '아이디 또는 비밀번호가 일치하지 않습니다.'})
+    else:
+        return render(request, 'mymember/login.html') 로그인 화면
+
+
+def join(request):
+    if request.method == 'POST':
+        userid = request.POST['userid']
+        passwd = request.POST['passwd']
+        passwd = hashlib.sha256(passwd.encode()).hexdigest()
+        name = request.POST['name']
+        address = request.POST['address']
+        tel = request.POST['tel']
+        Member(userid=userid, passwd=passwd, name=name, address=address, tel=tel).save()
+        request.session['userid'] = userid
+        request.session['name'] = name
+        return render(request, 'mymember/main.html')
+    else:
+        return render(request, 'mymember/join.html') 회원가입 양식
+
+
+def logout(request):
+    request.session.clear()
+	세션 초기화
+    return redirect('/mymember')
+	메인 페이지
+
+TemplateDoesNotExist at /mymember/
+mymember/login.html
+
+
+
+select * from mymember_member;
+
+
+
+IndexError at /mymember/login
+list index out of range
+
+<form method="post" action="....">
+http://127.0.0.1:8000/mymember/join
+
+	request 요청처리 내장객체
+	
+        request.session['userid'] = userid
+		세션    [key]
+        request.session['name'] = name
+        return render(request, 'mymember/main.html')
+
+
+  <h2>{{request.session.name}}님 환영합니다.</h2>
+
+
+
+1	23시	NNG	B_DT
+2	59분	NNG	B_DT
+3	김	NNG	B_FOOD
+
+
+
+
+
+model = Sequential()
+
+model.add(Embedding(input_dim=vocab_size, output_dim=30, input_length=max_len, mask_zero=True))
+
+# 양방향 LSTM
+
+	RNN => LSTM
+
+
+	t-2	t-1	t	t+1
+                    <=      <=
+	    =>      =>      =>			
+
+
+
+model.add(Bidirectional(LSTM(200, return_sequences=True, dropout=0.50, recurrent_dropout=0.25)))
+
+# 스텝별로 cost 계산, 스텝별로 역전파(최종 스텝에서 역전파되는 것이 아님)
+
+model.add(TimeDistributed(Dense(tag_size, activation='softmax')))
+
+model.compile(loss='categorical_crossentropy', optimizer=Adam(0.01), metrics=['accuracy'])
+
+model.fit(x_train, y_train, batch_size=128, epochs=10)
+
+model.save('ner_model.h5')
+
+
+
+
+
+
+
+# import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.keras import preprocessing
+from sklearn.model_selection import train_test_split
+import numpy as np
+from chatbot.Preprocess2 import Preprocess2
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        # Currently, memory growth needs to be the same across GPUs
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        # Memory growth must be set before GPUs have been initialized
+        print(e)
+
+
+# 학습 파일 불러오기
+def read_file(file_name):
+    sents = []
+    with open(file_name, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        for idx, l in enumerate(lines):
+            if l[0] == ';' and lines[idx + 1][0] == '$':
+                this_sent = []
+            elif l[0] == '$' and lines[idx - 1][0] == ';':
+                continue
+            elif l[0] == '\n':
+                sents.append(this_sent)
+            else:
+                this_sent.append(tuple(l.split()))
+    return sents
+
+
+p = Preprocess2(word2index_dic='c:/work/FoodShop/chatbot/data/chatbot_dict.bin',
+                userdic='c:/work/FoodShop/chatbot/data/user_dic.tsv')
+# 학습용 말뭉치 데이터를 불러옴
+corpus = read_file('c:/work/FoodShop/chatbot/data/ner_train.txt')
+# 말뭉치 데이터에서 단어와 BIO 태그만 불러와 학습용 데이터셋 생성
+sentences, tags = [], []
+for t in corpus:
+    tagged_sentence = []
+    sentence, bio_tag = [], []
+    for w in t:
+        tagged_sentence.append((w[1], w[3]))
+
+3	25	SN	B_TI
+0	1	2	3
+        sentence.append(w[1])
+        bio_tag.append(w[3])
+
+    sentences.append(sentence)
+    tags.append(bio_tag)
+print("샘플 크기 : \n", len(sentences))
+print("0번 째 샘플 단어 시퀀스 : \n", sentences[0])
+print("0번 째 샘플 bio 태그 : \n", tags[0])
+print("샘플 단어 시퀀스 최대 길이 :", max(len(l) for l in sentences))
+print("샘플 단어 시퀀스 평균 길이 :", (sum(map(len, sentences)) / len(sentences)))
+# 토크나이저 정의
+tag_tokenizer = preprocessing.text.Tokenizer(lower=False)  # 태그 정보는 lower=False 소문자로 변환하지 않는다.
+tag_tokenizer.fit_on_texts(tags)
+# 단어사전 및 태그 사전 크기
+vocab_size = len(p.word_index) + 1
+tag_size = len(tag_tokenizer.word_index) + 1
+print("BIO 태그 사전 크기 :", tag_size)
+print("단어 사전 크기 :", vocab_size)
+# 학습용 단어 시퀀스 생성
+x_train = [p.get_wordidx_sequence(sent) for sent in sentences]
+y_train = tag_tokenizer.texts_to_sequences(tags)
+index_to_ner = tag_tokenizer.index_word  # 시퀀스 인덱스를 NER로 변환 하기 위해 사용
+index_to_ner[0] = 'PAD'
+# 시퀀스 패딩 처리
+max_len = 40
+x_train = preprocessing.sequence.pad_sequences(x_train, padding='post', maxlen=max_len)
+y_train = preprocessing.sequence.pad_sequences(y_train, padding='post', maxlen=max_len)
+# 학습 데이터와 테스트 데이터를 8:2의 비율로 분리
+x_train, x_test, y_train, y_test = train_test_split(x_train, y_train,
+                                                    test_size=.2,
+                                                    random_state=1234)
+# 출력 데이터를 one-hot encoding
+y_train = tf.keras.utils.to_categorical(y_train, num_classes=tag_size)
+y_test = tf.keras.utils.to_categorical(y_test, num_classes=tag_size)
+print("학습 샘플 시퀀스 형상 : ", x_train.shape)
+print("학습 샘플 레이블 형상 : ", y_train.shape)
+print("테스트 샘플 시퀀스 형상 : ", x_test.shape)
+print("테스트 샘플 레이블 형상 : ", y_test.shape)
+# 모델 정의 (Bi-LSTM)
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Embedding, Dense, TimeDistributed, Dropout, Bidirectional
+from tensorflow.keras.optimizers import Adam
+
+model = Sequential()
+model.add(Embedding(input_dim=vocab_size, output_dim=30, input_length=max_len, mask_zero=True))
+# 양방향 LSTM
+model.add(Bidirectional(LSTM(200, return_sequences=True, dropout=0.50, recurrent_dropout=0.25)))
+# 스텝별로 cost 계산, 스텝별로 역전파(최종 스텝에서 역전파되는 것이 아님)
+model.add(TimeDistributed(Dense(tag_size, activation='softmax')))
+model.compile(loss='categorical_crossentropy', optimizer=Adam(0.01), metrics=['accuracy'])
+# model.fit(x_train, y_train, batch_size=128, epochs=10)
+# model.save('ner_model.h5')
+from tensorflow import keras
+
+model = keras.models.load_model('c:/work/FoodShop/chatbot/model/ner_model.h5')
+print("평가 결과 : ", model.evaluate(x_test, y_test)[1])
+
+
+# 시퀀스를 NER 태그로 변환
+def sequences_to_tag(sequences):  # 예측값을 index_to_ner를 사용하여 태깅 정보로 변경하는 함수.
+    result = []
+    for sequence in sequences:  # 전체 시퀀스로부터 시퀀스를 하나씩 꺼낸다.
+        temp = []
+        for pred in sequence:  # 시퀀스로부터 예측값을 하나씩 꺼낸다.
+            pred_index = np.argmax(pred)  # 예를 들어 [0, 0, 1, 0 ,0]라면 1의 인덱스인 2를 리턴한다.
+            temp.append(index_to_ner[pred_index].replace("PAD", "O"))  # 'PAD'는 'O'로 변경
+        result.append(temp)
+    return result
+
+
+# f1 스코어 계산을 위해 사용
+from seqeval.metrics import f1_score, classification_report
+
+# 테스트 데이터셋의 NER 예측
+y_predicted = model.predict(x_test)
+pred_tags = sequences_to_tag(y_predicted)  # 예측된 NER
+test_tags = sequences_to_tag(y_test)  # 실제 NER
+# F1 평가 결과
+print(classification_report(test_tags, pred_tags))
+print("F1-score: {:.1%}".format(f1_score(test_tags, pred_tags)))
+
+
+
+
+        self.index_to_ner = {1: 'O', 2: 'B_DT', 3: 'B_FOOD', 4: 'I', 5: 'B_OG', 6: 'B_PS', 7: 'B_LC', 8: 'NNP', 9: 'B_TI', 0: 'PAD'}
+
+
+
+
+
+
+
+
+import tensorflow as tf
+import numpy as np
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras import preprocessing
+
+
+# 개체명 인식 모델 모듈
+class NerModel:
+		model_name=, proprocess=p
+    def __init__(self, 'c:/work/FoodShop/chatbot/model/ner_model.h5', proprocess):
+        # BIO 태그 클래스 별 레이블
+        self.index_to_ner = {1: 'O', 2: 'B_DT', 3: 'B_FOOD', 4: 'I', 5: 'B_OG', 6: 'B_PS', 7: 'B_LC', 8: 'NNP',
+                             9: 'B_TI', 0: 'PAD'}
+        # 의도 분류 모델 불러오기
+        self.model = load_model(model_name)
+        # 챗봇 Preprocess 객체
+        self.p = proprocess
+
+    # 개체명 클래스 예측
+    def predict(self, query):
+        # 형태소 분석
+        pos = self.p.pos('오늘 오후 13시 2분에 탕수육 주문 하고 싶어요')
+        # 문장내 키워드 추출(불용어 제거)
+        keywords = self.p.get_keywords(pos, without_tag=True)
+        sequences = [self.p.get_wordidx_sequence(keywords)]
+        # 패딩처리
+        max_len = 40
+        padded_seqs = preprocessing.sequence.pad_sequences(sequences, padding="post", value=0, maxlen=max_len)
+        predict = self.model.predict(np.array([padded_seqs[0]]))
+        predict_class = tf.math.argmax(predict, axis=-1)
+        tags = [self.index_to_ner[i] for i in predict_class.numpy()[0]]
+        return list(zip(keywords, tags))
+
+    def predict_tags(self, query):
+        # 형태소 분석
+        pos = self.p.pos(query)
+        # 문장내 키워드 추출(불용어 제거)
+        keywords = self.p.get_keywords(pos, without_tag=True)
+        sequences = [self.p.get_wordidx_sequence(keywords)]
+        # 패딩처리
+        max_len = 40
+        padded_seqs = preprocessing.sequence.pad_sequences(sequences, padding="post", value=0, maxlen=max_len)
+        predict = self.model.predict(np.array([padded_seqs[0]]))
+        predict_class = tf.math.argmax(predict, axis=-1)
+        tags = []
+        for tag_idx in predict_class.numpy()[0]:
+            if tag_idx == 1: continue
+            tags.append(self.index_to_ner[tag_idx])
+        if len(tags) == 0: return None
+        return tags
+
+오늘 오후 13시 2분에 탕수육 주문 하고 싶어요
+
+
+[('오늘', 'B_DT'), ('오후', 'B_DT'), ('13시', 'B_DT'), ('2분', 'B_DT'), ('탕수육', 'B_FOOD'), ('주문', 'O'), ('하', 'O'), ('싶', 'O')]
+['B_DT', 'B_DT', 'B_DT', 'B_DT', 'B_FOOD']
+
+
+from chatbot.Preprocess2 import Preprocess2
+from chatbot.NerModel import NerModel
+
+p = Preprocess2(word2index_dic='c:/work/FoodShop/chatbot/data/chatbot_dict.bin',
+               userdic='c:/work/FoodShop/chatbot/data/user_dic.tsv')
+ner = NerModel(model_name='c:/work/FoodShop/chatbot/model/ner_model.h5', proprocess=p)
+query = '오늘 오후 13시 2분에 탕수육 주문 하고 싶어요'
+predicts = ner.predict(query)
+tags = ner.predict_tags(query)
+print(predicts)
+print(tags)
+
+
+
+x_train = [p.get_wordidx_sequence(sent) for sent in sentences]
+y_train = tag_tokenizer.texts_to_sequences(tags)
+
+
+        for word in keywords:
+            try:
+                w2i.append(self.word_index[word])
+            except KeyError:
+                # 해당 단어가 사전에 없는 경우, OOV 처리
+                w2i.append(self.word_index['OOV'])
+
+
+
+
+
+CREATE DATABASE mychatbot;	DB생성
+
+USE mychatbot;		DB선택
+
+create table chatbot_train_data (	테이블 생성
+id int primary key auto_increment not null,
+			일련번호 자동증가
+필드명 자료형
+intent varchar(45),
+ner varchar(45),
+query text,
+answer text not null,
+answer_image varchar(2048)
+);
+
+	` `
+
+레코드 추가
+INSERT INTO `chatbot_train_data` (`id`, `intent`, `ner`, `query`, `answer`, `answer_image`) VALUES (1, '인사', NULL, '안녕하세요', '네 안녕하세요 :D\n반갑습니다. 저는 챗봇입니다.', 'https://i.imgur.com/UluUFMp.jpg'), (2, '인사', NULL, '반가워요', '네 안녕하세요 :D\n반갑습니다. 저는 챗봇입니다.', 'https://i.imgur.com/UluUFMp.jpg'), (3, '주문', 'B_FOOD', '{B_FOOD} 주문할게요', '{B_FOOD} 주문 처리 완료되었습니다. \n주문해주셔서 감사합니다.', NULL), (4, '주문', 'B_FOOD', '{B_FOOD} 주문할게요', '{B_FOOD} 주문 처리 감사!!', NULL), (5, '예약', 'B_DT,B_TI', '{B_DT} 예약', '{B_DT}에 예약 접수 되었습니다.', NULL), (6, '욕설', NULL, NULL, '욕하면 나빠요 ㅠ', NULL);
+
+SELECT * FROM chatbot_train_data;
+
+DB_HOST = "127.0.0.1"
+DB_USER = "web"
+DB_PASSWORD = "1234"
+DB_NAME = "mychatbot"
+
+
+def DatabaseConfig():
+    global DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+	전역변수
+
+
+
+질문 :  오전에 탕수육 10개 주문합니다
+====================================================================================================
+의도 파악 :  주문
+개체명 인식 :  [('오전', 'B_DT'), ('탕수육', 'B_FOOD'), ('10', 'O'), ('개', 'O'), ('주문', 'O')]
+답변 검색에 필요한 NER 태그 :  ['B_DT', 'B_FOOD']
+====================================================================================================
+답변 :  탕수육 주문 처리 완료되었습니다. 
+
+
+질문 :  오늘 예약할께요
+====================================================================================================
+의도 파악 :  예약
+개체명 인식 :  [('오늘', 'B_DT'), ('예약', 'O')]
+답변 검색에 필요한 NER 태그 :  ['B_DT']
+====================================================================================================
+답변 :  오늘에 예약 접수 되었습니다.
+
+
+
+
+db = Database(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, db_name=DB_NAME)
+db.connect()
+
+
+    def __init__(self, host, user, password, db_name, charset='utf8'):
+        self.host =DB_HOST
+        self.user = user
+        self.password = password
+        self.charset = charset
+        self.db_name = db_name
+        self.conn = None
+
+
+    def connect(self):
+        if self.conn != None:
+            return
+        self.conn = pymysql.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password,
+            db=self.db_name,
+            charset=self.charset
+        )
+
+
+
+
+for query in items:
+    intent = IntentModel(model_name='c:/work/FoodShop/chatbot/model/intent_model.h5', proprocess=p)
+    predict = intent.predict_class(query)
+    intent_name = intent.labels[predict]
+
+    # 개체명 인식
+    ner = NerModel(model_name='c:/work/FoodShop/chatbot/model/ner_model.h5', proprocess=p)
+    predicts = ner.predict(query)
+    ner_tags = ner.predict_tags(query)
+    print("질문 : ", query)
+    print("=" * 100)
+    print("의도 파악 : ", intent_name)
+    print("개체명 인식 : ", predicts)
+    print("답변 검색에 필요한 NER 태그 : ", ner_tags)
+    print("=" * 100)
+    # 답변 검색
+    try:
+        f = FindAnswer(db)
+
+    def __init__(self, db):
+        self.db = db
+
+        answer_text, answer_image = f.search(intent_name, ner_tags)
+        answer = f.tag_to_word(predicts, answer_text)
+    except:
+        answer = "죄송합니다. 질문을 이해하지 못했습니다."
+    print("답변 : ", answer)
+db.close()
+
+
+    def search(self, intent_name, ner_tags):
+        # 의도명, 개체명으로 답변 검색
+        sql = self._make_query(intent_name, ner_tags)
+        answer = self.db.select_one(sql)
+        # 검색되는 답변이 없으면 의도명만 검색
+        if answer is None:
+            sql = self._make_query(intent_name, None)
+            answer = self.db.select_one(sql)
+        return (answer['answer'], answer['answer_image'])
+
+
+    def _make_query(self, intent_name, ner_tags):
+        sql = "select * from chatbot_train_data"
+        if intent_name != None and ner_tags == None:
+            sql = sql + " where intent='{}' ".format(intent_name)
+        elif intent_name != None and ner_tags != None:
+            where = ' where intent="%s" ' % intent_name
+            if (len(ner_tags) > 0):
+                where += 'and ('
+                for ne in ner_tags:
+                    where += " ner like '%{}%' or ".format(ne)
+                where = where[:-3] + ')'
+            sql = sql + where
+        # 동일한 답변이 2개 이상인 경우, 랜덤으로 선택
+        sql = sql + " order by rand() limit 1"
+        return sql
+
+select * from chatbot_train_data 
+where intent="주문" 
+and ( ner like '%B_DT%' or  ner like '%B_FOOD%' ) 
+order by rand() LIMIT 1;
+
+
+
+
+    def tag_to_word(self, ner_predicts, answer):
+        for word, tag in ner_predicts:
+            # 변환해야하는 태그가 있는 경우 추가
+            if tag == 'B_FOOD' or tag == 'B_DT' or tag == 'B_TI':
+                answer = answer.replace(tag, word)
+        answer = answer.replace('{', '')
+        answer = answer.replace('}', '')
+        return answer
+
+
+짜장면 주문 처리 완료되었습니다. 
+주문해주셔서 감사합니다.
+
+
+; 떡만두국 알려줘
+$<떡만두국:FOOD> 알려줘
+1	떡만두국	NNG	B_FOOD
+2	알리	VV	O
+3	어	EC	O
+4	주	VX	O
+5	어	EC	O
+
+
+
+
+
+
+
+words=['OOV'] # 0번에 단어 하나 미리 추가
+for a in tokenizer.word_index:
+    words.append(a)
+
+words  
+
+
+
+import threading
+import json
+from chatbot.db.DatabaseConfig import *
+from chatbot.db.Database import Database
+from chatbot.server.BotServer import BotServer
+from chatbot.Preprocess2 import Preprocess2
+from chatbot.IntentModel import IntentModel
+from chatbot.NerModel import NerModel
+from chatbot.FindAnswer import FindAnswer
+
+# 전처리 객체 생성
+p = Preprocess2(word2index_dic='c:/work/FoodShop/chatbot/data/chatbot_dict.bin',
+                userdic='c:/work/FoodShop/chatbot/data/user_dic.tsv')
+# 의도 파악 모델
+intent = IntentModel(model_name='c:/work/FoodShop/chatbot/model/intent_model.h5', proprocess=p)
+# 개체명 인식 모델
+ner = NerModel(model_name='c:/work/FoodShop/chatbot/model/ner_model.h5', proprocess=p)
+
+
+def to_client(conn, addr, params):
+    db = params['db']
+    try:
+        db.connect()  # 디비 연결
+        # 데이터 수신
+        read = conn.recv(2048)  # 수신 데이터가 있을 때 까지 블로킹
+        print('===========================')
+        print('Connection from: %s' % str(addr))
+        if read is None or not read:
+            # 클라이언트 연결이 끊어지거나, 오류가 있는 경우
+            print('클라이언트 연결 끊어짐')
+            exit(0)
+        # json 데이터로 변환
+        recv_json_data = json.loads(read.decode())
+        print("데이터 수신 : ", recv_json_data)
+        query = recv_json_data['Query']
+        # 의도 파악
+        intent_predict = intent.predict_class(query)
+        intent_name = intent.labels[intent_predict]
+        # 개체명 파악
+        ner_predicts = ner.predict(query)
+        ner_tags = ner.predict_tags(query)
+        # 답변 검색
+        try:
+            f = FindAnswer(db)
+            answer_text, answer_image = f.search(intent_name, ner_tags)
+            answer = f.tag_to_word(ner_predicts, answer_text)
+        except:
+            answer = "죄송합니다. 질문하신 내용을 이해하지 못했습니다."
+            answer_image = None
+        send_json_data_str = {
+            "Query": query,
+            "Answer": answer,
+            "AnswerImageUrl": answer_image,
+            "Intent": intent_name,
+            "NER": str(ner_predicts)
+        }
+        message = json.dumps(send_json_data_str)
+        conn.send(message.encode())
+    except Exception as ex:
+        print(ex)
+    finally:
+        if db is not None:  # db 연결 끊기
+            db.close()
+        conn.close()
+
+
+if __name__ == '__main__':
+    # 질문/답변 학습 디비 연결 객체 생성
+    db = Database(
+        host=DB_HOST, user=DB_USER, password=DB_PASSWORD, db_name=DB_NAME
+    )
+    print("DB 접속")
+    port = 5050
+    listen = 100
+    # 봇 서버 동작
+    bot = BotServer(port, listen)
+
+
+class BotServer:
+			port, listen
+    def __init__(self, srv_port, listen_num):
+        self.port = srv_port
+        self.listen = listen_num
+        self.mySock = None
+
+    bot.create_sock()
+
+    def create_sock(self):
+        self.mySock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			서버 소켓 생성     
+        self.mySock.bind(("192.168.100.34", int(self.port)))
+			   ip            port
+
+				0.0.0.0 내 컴퓨터의 ip
+				127.0.0.1
+				ipconfig
+				192.168.100.34	private ip 외부접속 x
+
+
+        self.mySock.listen(int(self.listen))
+		기다리는 상태
+        return self.mySock
+
+
+    print("bot start")
+    while True:
+        conn, addr = bot.ready_for_client()
+			클라이언트 접속 대기
+        params = {
+            "db": db
+        }
+		멀티스레드
+        client = threading.Thread(target=to_client, args=(
+            conn,			함수
+            addr,
+            params
+        ))
+        client.start()  스레드 시작
+
+
+
+
+			스트림
+			stream 데이터의 흐름
+
+			A		B
+			    =======> 보내는 데이터 - 출력 스트림
+			    <======= 받는 데이터 - 입력 스트림
+
+	소켓 통신
+
+	socket 논리적인 회선
+
+	서버측			클라이언트측
+	server socket		socket
+	ip, port
+	2.2.2.2    5000		2.2.2.2		5000
+
+
+	접속대기
+	접속하면
+	허가
+
+	통신			통신
+
+
+
+
+
+
+
+import socket
+import json
+
+# 챗봇 엔진 서버 접속 정보
+host = "127.0.0.1"  # 챗봇 엔진 서버 IP 주소
+port = 5050  # 챗봇 엔진 서버 통신 포트
+# 클라이언트 프로그램 시작
+while True:
+    print("질문 : ")
+    query = input()  # 질문 입력
+    if (query == "exit"):
+        exit(0)	프로그램 강제 종료
+    print("-" * 40)
+    # 챗봇 엔진 서버 연결
+    mySocket = socket.socket()
+			접속용 소켓 생성
+    mySocket.connect((host, port))
+			서버에 접속
+    # 챗봇 엔진 질의 요청
+			json	javascript object notation 
+				자바스크립트  객체   표기법
+			xml
+	<data>
+		<name>김철수</name>
+		<age>20</age>
+		<tel>02-222-2222</tel>
+	</data>
+
+	{"data": {"name":"김철수", "age":20, "tel":"02-222-2222"}}
+
+				
+    json_data = {
+        'Query': query,
+        'BotType': "MyService"
+    }
+    message = json.dumps(json_data)
+			json 으로 변환
+    mySocket.send(message.encode())
+	==>서버에 전달
+
+		원문 ====> 인코딩 ===> 디코딩
+		한글	바이트배열
+
+    # 챗봇 엔진 답변 출력
+    data = mySocket.recv(2048).decode()
+    ret_data = json.loads(data)
+    print("답변 : ")
+    print(ret_data['Answer'])
+    print(ret_data)
+    print(type(ret_data))
+    print("\n")
+    # 챗봇 엔진 서버 연결 소켓 닫기
+    mySocket.close()
+
+
+
+
+
+def to_client(conn, addr, params):
+    db = params['db']
+    try:
+        db.connect()  # 디비 연결
+        # 데이터 수신
+        read = conn.recv(2048)  # 수신 데이터가 있을 때 까지 블로킹
+		클라이언트 메시지 수신
+		
+        print('===========================')
+        print('Connection from: %s' % str(addr))
+        if read is None or not read:
+            # 클라이언트 연결이 끊어지거나, 오류가 있는 경우
+            print('클라이언트 연결 끊어짐')
+            exit(0)
+        # json 데이터로 변환
+        recv_json_data = json.loads(read.decode())
+
+			클라이언트		==>		서버
+			원문=>인코딩			디코딩==>원문
+
+        print("데이터 수신 : ", recv_json_data)
+        query = recv_json_data['Query']
+			질문내용
+        # 의도 파악
+        intent_predict = intent.predict_class(query)
+        intent_name = intent.labels[intent_predict]
+        # 개체명 파악
+        ner_predicts = ner.predict(query)
+        ner_tags = ner.predict_tags(query)
+        # 답변 검색
+        try:
+            f = FindAnswer(db)
+		DB에서 답변 조회
+            answer_text, answer_image = f.search(intent_name, ner_tags)
+            answer = f.tag_to_word(ner_predicts, answer_text)
+        except:
+            answer = "죄송합니다. 질문하신 내용을 이해하지 못했습니다."
+            answer_image = None
+        send_json_data_str = {
+            "Query": query,
+            "Answer": answer,
+            "AnswerImageUrl": answer_image,
+            "Intent": intent_name,
+            "NER": str(ner_predicts)
+        }
+		json으로 변환
+
+        message = json.dumps(send_json_data_str)
+        conn.send(message.encode())
+    except Exception as ex:
+        print(ex)
+    finally:
+        if db is not None:  # db 연결 끊기
+            db.close()
+        conn.close()
+
+
+
+장고 프로젝트 생성
+django-admin startproject config .  
+
+장고 앱 생성
+python manage.py startapp shop  
+
+
+
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'mychatbot', # DB
+        'USER': 'web', # id
+        'PASSWORD': '1234', # password
+        'HOST': 'localhost', # host
+        'PORT': '3306', # port
+    }
+}
+
+
+
+from django.db import models
+
+
+class Member(models.Model):
+    userid = models.CharField(max_length=50, null=False, primary_key=True)
+	필드명 = 자료형
+    passwd = models.CharField(max_length=500, null=False)
+    name = models.CharField(max_length=20, null=False)
+    address = models.CharField(max_length=20, null=False)
+    tel = models.CharField(max_length=20, null=True)
+
+
+class Chat(models.Model):
+	대화내용
+    idx = models.AutoField(primary_key=True)
+		자동증가 일련번호
+    userid = models.CharField(max_length=50, null=False)
+	사용자 아이디
+    query = models.CharField(max_length=500, null=False)
+	질문
+    answer = models.CharField(max_length=1000, null=False)
+	내용
+    intent = models.CharField(max_length=50, null=False)
+	의도
+
+	python manage.py makemigrations
+	python manage.py migrate
+
+	USE mychatbot;
+	SHOW TABLES;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

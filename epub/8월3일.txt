@@ -1,0 +1,343 @@
+챗봇 만들기
+
+자연어 처리 프로젝트(2차 프로젝트)
+
+
+
+def login(request):
+    if request.method == 'POST':
+        userid = request.POST['userid']
+        passwd = request.POST['passwd']
+        passwd = hashlib.sha256(passwd.encode()).hexdigest()
+        row = Member.objects.filter(userid=userid, passwd=passwd)
+        if len(row)>0:
+            row = Member.objects.filter(userid=userid, passwd=passwd)[0]
+            request.session['userid'] = userid
+            request.session['name'] = row.name
+            return render(request, 'mymember/main.html')
+        else:
+            return render(request, 'mymember/login.html',
+                          {'msg': '아이디 또는 비밀번호가 일치하지 않습니다.'})
+    else:
+        return render(request, 'mymember/login.html')
+
+
+
+
+from django.contrib import admin
+from django.urls import path
+from shop import views
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path('', views.home),
+    path('join', views.join),	
+	회원가입
+    path('login', views.login),
+	로그인
+    path('logout', views.logout),
+	로그아웃
+    path('order', views.order),
+	
+    path('query', views.query),
+	질문
+    path('delete_chat', views.delete_chat),
+	채팅 기록 삭제
+]
+
+
+
+
+sql: select * from chatbot_train_data where intent="주문" and ( ner like '%B_FOOD%' ) order by rand() limit 1
+{'Query': '짜장면 두그릇 주문합니다.', 'Answer': '짜장면 주문 처리 완료되었습니다. \n주문해주셔서 감사합니다.', 'AnswerImageUrl': None, 'Intent': '주문', 'NER': "[('짜장면', 'B_FOOD'), ('두', 'O'), ('그릇', 'O'), ('주문', 'O')]"}
+
+
+
+짜장면 주문 처리 감사!!
+
+
+
+
+
+
+from chatbot.db.DatabaseConfig import *
+from chatbot.db.Database import Database
+from chatbot.Preprocess2 import Preprocess2
+from chatbot.IntentModel import IntentModel
+from chatbot.NerModel import NerModel
+from chatbot.FindAnswer import FindAnswer
+
+# 전처리 객체 생성
+p = Preprocess2(word2index_dic='c:/work/FoodShop/chatbot/data/chatbot_dict.bin',
+                userdic='c:/work/FoodShop/chatbot/data/user_dic.tsv')
+# 의도 파악 모델
+intent = IntentModel(model_name='c:/work/FoodShop/chatbot/model/intent_model.h5', proprocess=p)
+# 개체명 인식 모델
+ner = NerModel(model_name='c:/work/FoodShop/chatbot/model/ner_model.h5', proprocess=p)
+
+		'짜장면 두그릇 주문합니다.'
+def getMessage(query):
+    try:
+        db = Database(
+            host=DB_HOST, user=DB_USER, password=DB_PASSWORD, db_name=DB_NAME
+        )
+        db.connect()
+        # 의도 파악
+        intent_predict = intent.predict_class(query)
+        intent_name = intent.labels[intent_predict]
+        # 개체명 파악
+        ner_predicts = ner.predict(query)
+        ner_tags = ner.predict_tags(query)
+        # 답변 검색
+        try:
+            f = FindAnswer(db)
+            answer_text, answer_image = f.search(intent_name, ner_tags)
+            answer = f.tag_to_word(ner_predicts, answer_text)
+        except:
+            answer = "죄송합니다. 질문 내용을 이해하지 못했습니다."
+            answer_image = None
+        json = {
+            "Query": query,
+            "Answer": answer,
+            "AnswerImageUrl": answer_image,
+            "Intent": intent_name,
+            "NER": str(ner_predicts)
+        }
+        return json
+    except Exception as ex:
+        print(ex)
+
+
+if __name__ == '__main__':
+    msg = getMessage('짜장면 두그릇 주문합니다.')
+    print(msg)
+
+
+
+
+
+
+
+	y_test=[1,0,1,0,0,0,0]
+	pred=  [0,1,0,0,0,0,0]
+
+y_true = [['O', 'O', 'O', 'B-MISC', 'I-MISC', 'I-MISC', 'O'], ['B-PER', 'I-PER', 'O']]
+y_pred = [['O', 'O', 'B-MISC', 'I-MISC', 'I-MISC', 'I-MISC', 'O'], ['B-PER', 'I-PER', 'O']]
+
+ multiclass-multioutput is not supported
+
+
+
+
+hit = 0 # 정답 개수
+for t, p in zip(test_tags, pred_tags):
+    if t == p:
+        hit +=1 # 정답인 경우에만 +1
+accuracy = hit/len(test_tags) # 정답 개수를 총 개수로 나눈다.
+print("정확도: {:.1%}".format(accuracy))
+#정확도가 95.9%이지만 실제로는 O가 대부분이므로 정확한 평가가 어려움
+
+
+
+
+
+def home(request):
+    if 'userid' not in request.session.keys():	로그아웃 상태
+               포함x          세션       키집합
+        return render(request, 'shop/login.html')
+    else:	로그인 상태
+        return render(request, 'shop/main.html')
+
+
+
+
+
+def order(request):
+    return render(request, 'shop/order.html')
+		챗봇 서비스 
+
+def query(request):
+    question = request.GET["question"]
+			질문
+    msg = getMessage(question)
+
+	{key:value, key:value}
+
+{'Query': '짜장면 두그릇 주문합니다.', 'Answer': '짜장면 주문 처리 완료되었습니다. \n주문해주셔서 감사합니다.', 'AnswerImageUrl': None, 'Intent': '주문', 'NER': "[('짜장면', 'B_FOOD'), ('두', 'O'), ('그릇', 'O'), ('주문', 'O')]"}
+
+
+    query = msg['Query']
+    answer = msg['Answer']
+    intent = msg['Intent']
+    Chat(userid=request.session['userid'], query=query, intent=intent).save()
+    Chat(userid=request.session['userid'], answer=answer, intent=intent).save()
+    items = Chat.objects.filter(userid=request.session['userid']).order_by('-idx')
+								- 내림차순
+    return render(request, 'shop/result.html', {'items': items})
+
+
+def delete_chat(request):
+    Chat.objects.filter(userid=request.session['userid']).delete()
+    return redirect('/order')
+
+
+
+
+
+
+
+
+챗봇 서비스입니다.
+
+	id - 식별자
+	name - 중복가능 => 서버에서 확인
+
+    <input type="text" id="question">
+    <input type="button" id="button1" value="확인">
+    <input type="button" onclick="delete_chat()" value="삭제">
+    <div id="div1">
+<br>
+<table border="0">
+
+    <tr>
+        <td width="50%" bgcolor="white"></td>
+        
+        <td width="50%" bgcolor="yellow">B_FOOD 주문 처리 감사!!</td>
+        
+    </tr>
+
+    <tr>
+        <td width="50%" bgcolor="white">피자 주문이요</td>
+        
+        <td width="50%" bgcolor="white"></td>
+        
+    </tr>
+
+    <tr>
+        <td width="50%" bgcolor="white"></td>
+        
+        <td width="50%" bgcolor="yellow">욕하면 나빠요 ㅠ</td>
+        
+    </tr>
+
+    <tr>
+        <td width="50%" bgcolor="white">hello</td>
+        
+        <td width="50%" bgcolor="white"></td>
+        
+    </tr>
+
+</table>
+
+
+</div>
+
+
+    <script src="http://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+	$ => jquery
+	$(function(){
+		로딩 후 자동실행
+	});
+
+
+        $(function(){
+
+	$("#button1")  id가 button1인 태그
+
+            $("#button1").click(function(){
+                const q=$("#question").val();
+				id가 question인 태그에 입력한 value
+		상수
+		let 변수
+                console.log('q:',q);
+
+		백그라운드에서 실행
+
+		sync	동기식	- 순서대로 실행
+		async	비동기식	- 동시에 실행
+		javascript
+		and
+		xml
+                $.ajax({
+                    url: '/query',		백그라운드 실행 주소
+                    data: 'question='+q,	서버에 전달할 데이터
+
+    return render(request, 'shop/result.html', {'items': items})
+<br>
+<table border="0">
+{% for item in items %}
+    <tr>
+        <td width="50%" bgcolor="white">{{item.query}}</td>
+        {% if item.answer == '' %}
+        <td width="50%" bgcolor="white">{{item.answer}}</td>
+        {% else %}
+        <td width="50%" bgcolor="yellow">{{item.answer}}</td>
+        {% endif %}
+    </tr>
+{% endfor %}
+</table>
+
+
+                    success:function(txt){	처리가 완료된 후 실행(콜백함수)
+				    response text 응답 텍스트
+                        console.log(txt);
+                        $("#div1").html(txt);
+			id가 div1인 태그 내부에 html 형식으로 출력
+                    }
+                });
+            });
+        });
+        function delete_chat(){
+            if(confirm('모든 내용을 삭제하시겠습니까?')){
+                location.href='delete_chat';
+            }
+        }
+    </script>
+
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'mychatbot', # DB
+        'USER': 'root', # id
+        'PASSWORD': '1234', # password
+        'HOST': 'localhost', # host
+        'PORT': '3306', # port
+    }
+}
+
+
+
+
+
+
+
+* 주제 : 주제1~3 중에서 택1(첨부파일 참조)
+
+  - 리뷰 데이터를 이용한 평점 예측 프로젝트
+
+  - 음식 주문 및 추천 질의 응답 챗봇 프로젝트
+
+  - 소셜 미디어 게시물 기반 우울증 감정 분석 프로젝트
+
+
+
+  제시된 주제 또는 유사한 주제의 프로젝트를 수행함(유사한 주제로 변경은 가능하나 기획 의도에 대한 설명이 가능해야 함)
+
+
+
+* 일정 : 8.3(목) ~ 8.31(목) 
+
+  - 1~2교시 진도(머신러닝, Django)
+
+  - 주제 선정 및 조편성, 프로젝트 계획서 작성(8월 8일 화요일 퇴실 전까지 작성하여 이메일 전송, msha@naver.com)
+
+  - 주간보고서 작성
+
+  - 8/31(목) 오후 조별 발표 진행
+
+  - 수업 시간, 휴식 시간 준수
+
+

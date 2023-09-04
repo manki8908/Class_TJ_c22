@@ -1,0 +1,349 @@
+PyTorch
+트랜스포머 모델
+
+자연어 처리 프로젝트(2차 프로젝트)
+	주제 선정
+	데이터 수집, 전처리
+	기계학습 모형, 평가
+	응용프로그램에 배포
+	발표 준비
+
+
+2교시 산업인력공단 신규과정 심사 강사 인터뷰 참여
+
+
+
+(60000, 28, 28)
+ 샘플수  가로 세로
+
+
+X_train= X_train.reshape(-1,784)
+			 행  열
+X_test= X_test.reshape(-1,784)
+
+	0 ~ 255
+
+	weight 가중치
+
+X_train=X_train/255.	0.0~1.0
+X_test=X_test/255.
+
+
+
+
+
+
+import torch
+
+	numpy() 메모리
+	.cpu()	cpu
+	.cuda()	gpu
+
+X_train=torch.from_numpy(X_train).float()
+y_train=torch.from_numpy(y_train.astype('int32')).long()
+X_test=torch.from_numpy(X_test).float()
+y_test=torch.from_numpy(y_test.astype('int32')).long()
+print(X_train.shape)
+print(X_test.shape)
+X_train=X_train.cuda()
+y_train=y_train.cuda()
+X_test=X_test.cuda()
+y_test=y_test.cuda()
+
+
+
+
+
+import torch.nn as nn
+import torch.nn.functional as F
+# 신경망 구성
+class Net(nn.Module):
+	상위클래스
+    def __init__(self):
+		초기화
+        super(Net, self).__init__()
+		상위클래스
+        self.fc1 = nn.Linear(784, 128)	relu
+			    in    out
+        self.fc2 = nn.Linear(128, 10)	softmax
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return F.softmax(x, dim=-1)
+    
+model=Net().cuda()
+
+	Net()	클래스=>메모리, 인스턴스화
+		초기화함수 호출
+
+
+from skorch import NeuralNetClassifier
+net = NeuralNetClassifier(Net,max_epochs=20,lr=0.1)		
+			 모형   에폭             학습률
+net.fit(X_train, y_train)
+
+
+
+
+import numpy as np
+# 모형의 정확도 계산
+pred = net.predict(X_test)
+y_test = y_test.cpu().numpy()
+accuracy = np.mean(pred == y_test)
+accuracy
+
+
+
+import torch
+import os    
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+a=torch.linspace(-1, 1, 10)
+print(a)
+print(a.shape)
+
+	squeeze 차원축소
+	unsqueeze 차원증가
+
+# size가 1인 dimension 추가
+# dim=추가할인덱스, (0, 추가할 인덱스)
+b=torch.unsqueeze(torch.linspace(-1, 1, 10), dim=1)
+print(b)
+print(b.shape)
+
+
+
+import random
+from matplotlib import pyplot as plt
+random.seed(1)
+torch.manual_seed(1)
+X = torch.unsqueeze(torch.linspace(-1, 1, 100), dim=1).to(device)
+y = X.pow(3) + 0.3 * torch.rand(X.size()).to(device)
+print(X.shape)
+print(y.shape)
+plt.scatter(X.cpu().numpy(), y.cpu().numpy())
+
+
+can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first.
+
+
+
+from torch import nn
+learning_rate = 1e-3
+model = nn.Sequential(
+    nn.Linear(1, 100),
+             in   out
+    nn.Linear(100, 10),
+    nn.Linear(10, 1)
+)
+model.to(device) # Convert to CUDA
+
+
+
+criterion = torch.nn.MSELoss()
+손실함수
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+최적화함수
+for t in range(1000):
+    
+    y_pred = model(X_train)
+	학습진행
+    
+    loss = criterion(y_pred, y_train)
+	손실계산
+    print(f"epoch: {t}, loss: {loss:.3f}")
+    optimizer.zero_grad()	가중치 초기화
+    
+    loss.backward()	역전파 계산
+    
+    optimizer.step()	가중치 변경
+
+
+
+
+
+
+
+learning_rate = 1e-3
+n_networks = 9
+models = list()
+criterion = torch.nn.MSELoss()
+for i in range(n_networks):
+    model = nn.Sequential(
+        nn.Linear(1, 100),
+        nn.ReLU() if i % 3 == 0 else nn.Tanh() if i % 3==1 else nn.Sigmoid(),
+			0 relu			1 tanh		2 sigmoid
+		i%3==0
+		i를 3으로 나눈 나머지가 0이면
+
+
+		else nn.Tanh() if i % 3==1
+
+        nn.Linear(100, 1)
+    )
+    model.to(device)
+    
+    models.append(model)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    
+    for t in range(1000):
+        y_pred = model(X_train)
+        loss = criterion(y_pred, y_train)
+        print(f"model: {i + 1}, epoch: {t}, loss: {loss.item():.3f}")
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+
+acc=[]
+for model in models:
+    mse = ((torch.pow((model(X_test).data.cpu() - y_test.cpu()), 2)).sum()) / len(y_test.cpu())
+
+		
+		len(y_test.cpu())	샘플수
+
+    acc.append(mse)
+    print(mse)
+
+
+for i in range(9):
+    model=models[i]
+    print(model)
+    print(acc[i])
+
+
+import torch
+X = torch.from_numpy(df['x'].values).unsqueeze(1).float()
+	1차원 => 2차원으로
+		
+y = torch.from_numpy(df['y'].values).unsqueeze(1).float()
+
+
+
+import matplotlib.pyplot as plt
+import os    
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
+
+
+
+
+from torch import nn
+# 단순한 신경망
+model = nn.Linear(in_features=1, out_features=1, bias=True)
+print(model)
+# 초기 파라미터
+print(model.weight)
+print(model.bias)
+
+
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(params=model.parameters(), lr=0.01)
+print(model(X)) # predict(학습 전)
+
+for step in range(500):
+    prediction = model(X)
+    loss = criterion(input=prediction, target=y)
+		손실계산
+    optimizer.zero_grad()	가중치 초기화
+    loss.backward()		역전파 계산
+    optimizer.step()		가중치 수정
+    print(f"epoch: {step}, loss: {loss:.3f}")
+
+def mse_loss(preds, trues):  
+    return torch.sum((preds - trues)**2) / preds.view(-1).shape[0]
+			출력   실제		  1차원으로
+
+mse_loss(model(X), y)
+
+
+loss.data.item(), model.weight.data.item(), model.bias.data.item()
+
+
+import torch.nn as nn
+input_dim = X_train.shape[1] 변수개수
+		(행,열)
+output_dim = 64  
+model = nn.Sequential(
+    nn.Linear(input_dim,24),
+               3개        output
+    nn.ReLU(),
+    nn.Linear(24,12),
+    nn.ReLU(),
+    nn.Linear(12,3),
+    nn.ReLU(),
+    nn.Linear(3,1)
+)
+print(model)
+print(model[6].weight)
+print(model[6].bias)
+
+
+Sequential(
+  (0): Linear(in_features=3, out_features=24, bias=True)
+  (1): ReLU()
+  (2): Linear(in_features=24, out_features=12, bias=True)
+  (3): ReLU()
+  (4): Linear(in_features=12, out_features=3, bias=True)
+  (5): ReLU()
+  (6): Linear(in_features=3, out_features=1, bias=True)
+)
+
+
+
+
+mse = nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(),lr = 0.01)
+loss_list = []
+iteration_number = 5000
+for iteration in range(iteration_number):
+    optimizer.zero_grad()	가중치 초기화
+    results = model(inputs)	순전파
+    
+    loss = mse(results, targets)
+		오차계산
+    loss.backward() 역전파 계산
+    optimizer.step() 가중치 수정
+    loss_list.append(loss.data)
+    if(iteration % 50 == 0):
+        print('epoch {}, loss {}'.format(iteration, loss.data))
+
+
+
+input_x_test = torch.from_numpy(X_test)
+predicted = model(input_x_test.float()).data.numpy()
+predicted[0:5]
+
+
+
+	tensorflow/keras
+	pytorch
+
+
+	사전훈련	pretrained
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+

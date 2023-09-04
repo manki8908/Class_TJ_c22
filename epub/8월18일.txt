@@ -1,0 +1,459 @@
+회귀분석
+PyTorch
+
+자연어 처리 프로젝트(2차 프로젝트)
+	주제 선정
+	데이터 수집, 전처리
+	기계학습 모형, 평가
+	응용프로그램에 배포
+	발표 준비
+
+
+
+
+sm.OLS.from_formula("value ~ C(month)+0", df)
+
+			종속 ~ 독립
+
+			value ~ month
+
+				1~12
+
+			C(month)
+			month=> 수치=>범주형
+
+
+
+
+
+
+
+import statsmodels.api as sm 
+model=sm.OLS.from_formula('value ~ month',df) 
+			  종속 ~ 독립
+result=model.fit()
+result.summary()
+
+
+Dep. Variable:	value	R-squared:	0.050
+Model:	OLS		Adj. R-squared:	0.046
+
+
+	coef	std err	t	P>|t|	[0.025	0.975]
+Intercept	45.4377	1.152	39.433	0.000	43.168	47.708
+month	0.5541	0.157	3.539	0.000	0.246	0.863
+
+
+model=sm.OLS.from_formula('value ~ C(month)+0',df) 
+
+Dep. Variable:	value	R-squared:	0.930
+Model:	OLS	Adj. R-squared:	0.927
+
+
+		coef	std err	t	P>|t|	[0.025	0.975]
+C(month)[1]	39.6950	0.518	76.691	0.000	38.675	40.715
+C(month)[2]	39.1900	0.518	75.716	0.000	38.170	40.210
+C(month)[3]	42.1950	0.518	81.521	0.000	41.175	43.215
+C(month)[4]	46.2900	0.518	89.433	0.000	45.270	47.310
+C(month)[5]	52.5600	0.518	101.547	0.000	51.540	53.580
+C(month)[6]	58.0400	0.518	112.134	0.000	57.020	59.060
+C(month)[7]	61.9000	0.518	119.592	0.000	60.880	62.920
+C(month)[8]	60.5200	0.518	116.926	0.000	59.500	61.540
+C(month)[9]	56.4800	0.518	109.120	0.000	55.460	57.500
+C(month)[10]	49.4950	0.518	95.625	0.000	48.475	50.515
+C(month)[11]	42.5800	0.518	82.265	0.000	41.560	43.600
+C(month)[12]	39.5300	0.518	76.373	0.000	38.510	40.550
+
+
+
+
+
+	pip install scikit-learn==1.0.2
+
+
+
+
+
+
+
+
+from sklearn.datasets import load_boston 
+import pandas as pd 
+boston=load_boston()
+dfX = pd.DataFrame(boston.data, columns=boston.feature_names)
+dfy = pd.DataFrame(boston.target, columns=['MEDV'])
+df=pd.concat([dfX,dfy],axis=1)
+df 
+
+
+
+import statsmodels.api as sm 
+model=sm.OLS(dfy, dfX)  
+		종속,독립
+	최소자승법
+result=model.fit()
+result.summary()
+# AGE 변수의 기울기 확인
+
+Dep. Variable:	MEDV	R-squared (uncentered):	0.959
+			모형의 설명력		0.0~1.0
+Model:	OLS	Adj. R-squared (uncentered):	0.958
+
+
+
+	coef	std err	t	P>|t|	[0.025	0.975]
+	회귀계수			유의확률
+	기울기
+CRIM	-0.0929	0.034	-2.699	0.007	-0.161	-0.025
+ZN	0.0487	0.014	3.382	0.001	0.020	0.077
+INDUS	-0.0041	0.064	-0.063	0.950	-0.131	0.123
+CHAS	2.8540	0.904	3.157	0.002	1.078	4.630
+범주형	강가 2.8 아닐 때
+
+
+NOX	-2.8684	3.359	-0.854	0.394	-9.468	3.731
+RM	5.9281	0.309	19.178	0.000	5.321	6.535
+AGE	-0.0073	0.014	-0.526	0.599	-0.034	0.020
+DIS	-0.9685	0.196	-4.951	0.000	-1.353	-0.584
+RAD	0.1712	0.067	2.564	0.011	0.040	0.302
+TAX	-0.0094	0.004	-2.395	0.017	-0.017	-0.002
+PTRATIO	-0.3922	0.110	-3.570	0.000	-0.608	-0.176
+B	0.0149	0.003	5.528	0.000	0.010	0.020
+LSTAT	-0.4163	0.051	-8.197	0.000	-0.516	-0.317
+
+
+import seaborn as sns
+sns.regplot(x='AGE',y='MEDV',data=df) 
+#기울기가 마이너스로 표현됨
+
+
+
+
+
+
+others=list(set(df.columns).difference(set(['MEDV','AGE'])))
+		집합
+		중복값 제거
+others 
+
+
+
+
+from statsmodels.graphics.regressionplots import plot_partregress
+import matplotlib.pyplot as plt 
+plot_partregress('MEDV','AGE',others,data=df,obs_labels=False) 
+부분회귀               y   x   배제
+
+plt.show()
+# 다른 요인들을 제거한 그래프
+
+
+
+
+
+from statsmodels.graphics.regressionplots import plot_partregress_grid 
+import matplotlib.pyplot as plt
+fig = plt.figure(figsize=(8, 20))
+plot_partregress_grid(result, fig=fig)
+plt.plot() 
+
+
+ValueError: could not convert string to float: 'female'
+
+data2.corr()['charges'].sort_values()
+상관계수행렬
+
+	-1.0 ~ 1.0
+	음      양
+
+
+
+		coef		std err	t	P>|t|	[0.025	0.975]
+age		256.8564	11.899	21.587	0.000	233.514	280.199
+sex		-131.3144	332.945	-0.394	0.693	-784.470	521.842
+bmi		339.1935	28.599	11.860	0.000	283.088	395.298
+children	475.5005	137.804	3.451	0.001	205.163	745.838
+smoker		2.385e+04	413.153	57.723	0.000	2.3e+04	2.47e+04
+southwest	-1.29e+04	1020.964	-12.634	0.000	-1.49e+04	-1.09e+04
+southeast	-1.297e+04	1079.158	-12.022	0.000	-1.51e+04	-1.09e+04
+northeast	-1.194e+04	987.819	-12.086	0.000	-1.39e+04	-1e+04
+northwest	-1.229e+04	988.196	-12.438	0.000	-1.42e+04	-1.04e+04
+
+
+
+model2 = sm.OLS.from_formula("MEDV ~ LSTAT + I(LSTAT**2)",
+					 + 변수 추가, - 제거 
+data=df_boston)
+
+
+		np.sqrt(MEDV) ~ LSTAT
+
+
+
+sns.scatterplot(x='LSTAT', y='MEDV', data=df_boston)
+
+				
+model2=sm.OLS.from_formula('MEDV ~ LSTAT + I(LSTAT**2)', data=df_boston)
+                             종속   독립     I 정수, ** 제곱
+result2=model2.fit()
+result2.summary()
+#54.4% => 64.1%
+
+
+
+
+
+
+
+model4=sm.OLS.from_formula('MEDV ~ C(np.round(RM))+0', data=df_boston)
+				   C 범주형  round 반올림
+result4=model4.fit()
+result4.summary()
+
+
+
+import datetime as dt 
+df['Date'] = pd.to_datetime(df['Date']) 
+#서기1년1월 기준 경과한 날짜
+df['Ordinal']=df.Date.map(dt.datetime.toordinal)
+df['Timestamp']=df.Date.map(dt.datetime.timestamp)
+			1970.1.1 밀리세컨드
+df.head()
+
+model5=sm.OLS.from_formula('Demand ~ scale(Ordinal)',data=df) 
+					스케일링
+result5=model5.fit()
+result5.summary()
+
+
+df['Year']=df.Date.dt.year 
+df['Month']=df.Date.dt.month 
+df['DayOfYear']=df.Date.dt.dayofyear 
+df['DayOfMonth']=df.Date.dt.daysinmonth 
+df['DayOfWeek']=df.Date.dt.dayofweek 
+#df['WeekOfYear']=df.Date.dt.weekofyear 
+df['Weekday']=df.Date.dt.weekday 
+df['IsMonthStart']=df.Date.dt.is_month_start 
+df['IsMonthEnd']=df.Date.dt.is_month_end 
+df.tail()
+
+
+formula=''' 
+Demand ~ scale(Ordinal) + C(Month)+0 + DayOfYear + C(DayOfMonth)+0
++ C(DayOfWeek)+0 + C(Weekday)+0 + C(IsMonthStart)+0 
++ C(IsMonthEnd)+0
+'''
+model6=sm.OLS.from_formula(formula, data=df) 
+result6=model6.fit()
+result6.summary()
+# 3.1% => 53.7% 
+
+
+
+model11=sm.OLS.from_formula('np.sqrt(MEDV) ~ LSTAT', data=df_boston)
+result11=model11.fit()
+result11.summary()
+
+
+
+
+
+
+	tensor 다차원 배열
+
+
+
+
+
+
+
+import numpy as np
+import torch
+li = np.array([[1, 2], [3, 4]])
+#넘파이배열을 텐서로 변환
+		cpu, gpu
+
+tensor1 = torch.tensor(li)
+		memory => cpu or gpu
+tensor2 = torch.as_tensor(li)
+tensor3 = torch.from_numpy(li)
+print(tensor1)
+print(tensor2)
+print(tensor3)
+
+
+
+
+
+torch.manual_seed(10) #랜덤시드 고정
+a = torch.rand(5) # 0 ~ 1 사이의 5개의 난수
+b = torch.randn(5) # 평균 0, 표준편차 1인 5개의 난수
+c = torch.randint(10, size=(5,)) # 0~9 사이의 5개의 난수
+
+		size=(5,)
+		     1차원
+			(5,5)
+
+print(a)
+print(b)
+print(c)
+
+print(torch.arange(1, 10)) # 1~9
+		   start, stop, step
+print(torch.ones((2, 5))) # 2행 5열, 1로 채움
+print(torch.zeros((3, 5))) #3행 5열, 0으로 채움
+print(torch.linspace(0, 10, 5)) # 0~10, 5등분
+
+
+
+#텐서의 형상 변환(reshape)
+t1 = torch.ones(4, 3)
+t2 = t1.view(3, 4) #3행 4열로 변환
+t3 = t1.view(12) #1차원 배열로 변환
+print(t1)
+print(t2)
+print(t3)
+
+
+class Model(nn.Module):
+
+    def __init__(self, input_dim):
+	초기화함수         입력 차원
+
+        super(Model, self).__init__()
+	상위
+
+        #input layer, Linear 선형함수(1차함수)
+
+        #input nodes, output nodes 50
+
+        self.layer1 = nn.Linear(input_dim,50) 
+			        변수4개    
+				input	output
+
+        self.layer2 = nn.Linear(50, 20)
+
+        self.layer3 = nn.Linear(20, 3)
+
+        
+
+    def forward(self, x):
+	순방향
+
+        x = F.relu(self.layer1(x))
+
+        x = F.relu(self.layer2(x))
+
+        # 출력층의 활성화함수 - 소프트맥스
+
+        x = F.softmax(self.layer3(x), dim=0)
+
+        return x
+
+
+import torch
+model = Model(X_train.shape[1]) # 초기화함수의 input_dim으로 변수개수가 전달됨
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01) # 최적화함수 정의
+			옵티마이저			학습률
+loss_fn = nn.CrossEntropyLoss() #손실함수 정의
+epochs = 100
+
+Model(
+  (layer1): Linear(in_features=4, out_features=50, bias=True)
+  (layer2): Linear(in_features=50, out_features=20, bias=True)
+  (layer3): Linear(in_features=20, out_features=3, bias=True)
+)
+
+
+from torch.autograd import Variable
+import torch.nn.functional as F
+
+X_train = Variable(torch.from_numpy(X_train)).float()
+			메모리=> cpu,gpu 텐서
+y_train = Variable(torch.from_numpy(y_train)).long()
+for epoch in range(1, epochs+1):
+    print("Epoch",epoch)
+    
+    y_pred = model(X_train)
+    
+    loss = loss_fn(y_pred, y_train) #오차 계산
+		   출력     실제
+    print('loss:',loss.item())
+    
+    # 경사 초기화
+    optimizer.zero_grad()
+    loss.backward() # 역전파
+    optimizer.step() # 가중치 업데이트
+
+
+X_test = Variable(torch.from_numpy(X_test)).float()
+pred = model(X_test)
+pred[:5]
+
+
+	0		1		2
+tensor([[3.1031e-07, 7.7935e-03, 5.6178e-05],
+        [2.6880e-02, 5.7632e-07, 2.1322e-10],
+        [1.4610e-07, 2.4781e-03, 1.5246e-04],
+        [4.1745e-08, 7.5879e-04, 7.0475e-04],
+        [1.4737e-05, 3.0574e-01, 4.7690e-07]], grad_fn=<SliceBackward0>)
+
+
+import numpy as np
+np.argmax(pred.data.numpy(), axis=1)
+		메모리		row
+
+
+
+array([1, 0, 1, 1, 1, 2, 0, 2, 2, 0, 0, 1, 2, 2, 1, 0, 0, 1, 2, 0, 2, 2,
+       2, 0, 0, 1, 1, 0, 1, 1], dtype=int64)
+
+from sklearn.metrics import accuracy_score
+# 모형의 정확도 측정
+accuracy_score(y_test, np.argmax(pred.data.numpy(), axis=1))
+
+
+torch.save(model, "c:/data/iris/iris-torch.h5")
+
+
+model2 = torch.load("c:/data/iris/iris-torch.h5")
+np.argmax(model2(X_test[0]).data.numpy())
+
+
+
+=================================================================
+Layer (type:depth-idx)                   Param #
+=================================================================
+Model                                    --
+├─Linear: 1-1                            250
+├─Linear: 1-2                            1,020
+├─Linear: 1-3                            63
+=================================================================
+Total params: 1,333
+Trainable params: 1,333
+		학습가능한 파라미터
+Non-trainable params: 0
+		학습이 불필요한 
+=================================================================
+
+summary(model,input_size=(32, 4))
+			  (미니배치, 독립변수개수)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

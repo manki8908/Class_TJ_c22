@@ -1,0 +1,335 @@
+사례기반추론
+SVM
+
+자연어 처리 프로젝트(2차 프로젝트)
+
+
+knn = KNeighborsClassifier(n_neighbors=n)
+
+	k 최근접이웃 분류        이웃의 수
+
+
+
+
+	Month	Day	Solar.R		Wind	Temp	Ozone	Result
+0	5	1	190.000000	7.4	67	41	0
+1	5	2	118.000000	8.0	72	36	0
+2	5	3	149.000000	12.6	74	12	0
+3	5	4	313.000000	11.5	62	18	0
+4	5	5	185.931507	14.3	56	42	1
+
+
+	독립변수 : Solar.R  Wind	Temp
+	종속변수 : Result
+
+
+import mglearn
+pd.plotting.scatter_matrix(X,c=y,figsize=(15,15),marker='o',cmap=mglearn.cm3)
+
+		산점도 행렬
+
+
+
+from sklearn.neighbors import KNeighborsClassifier
+import matplotlib.pyplot as plt 
+train_rate=[]
+test_rate=[]
+neighbors=range(1,11)
+		1~10
+for n in neighbors:
+    knn=KNeighborsClassifier(n_neighbors=n)
+				이웃의 수
+    knn.fit(X_train,y_train)
+    train_rate.append(knn.score(X_train,y_train))
+    test_rate.append(knn.score(X_test,y_test))
+
+plt.plot(neighbors,train_rate,label='Train')    
+plt.plot(neighbors,test_rate,label='Test')   
+plt.ylabel('accuracy') 
+plt.xlabel('k')
+plt.legend()
+
+
+import numpy as np 
+max_rate=max(test_rate)
+idx=np.argmax(test_rate) #최대값의 인덱스
+print(max_rate)
+print(idx) # k=1
+
+	hyper parameter
+	하이퍼 파라미터
+
+model=KNeighborsClassifier(n_neighbors=1)
+model.fit(X_train,y_train)
+pred=model.predict(X_test)
+출력	입력
+print(model.score(X_train,y_train))
+print(model.score(X_test,y_test))
+
+
+1.0
+0.7241379310344828
+
+	과적합
+	over fitting
+	지나치게 맞춰져있음
+
+
+
+	후보변수		유의변수 확정
+
+
+	분산 정보의 양	다중공선성
+			다중 - 여러개 변수
+			공선 - 공유 선
+
+	0
+	0	
+	0
+	0	
+	1
+	0
+	0
+
+
+
+train_cols=df.columns[1:]
+			[start:stop]
+			1부터 끝까지
+X=df[train_cols]
+y=df['survived']
+
+0		1	2	3...
+survived	sex	age	sibsp	parch	fare	adult_male	alone	pclass_1
+
+
+
+	상관계수
+
+	-1.0	1.0
+	음	양
+
+
+from sklearn.feature_selection import RFE 
+from sklearn.linear_model import LogisticRegression 
+model=LogisticRegression(max_iter=5000)
+#변수의 coef_ 또는 feature_importances_ 수치가 높은 변수들을 기준으로 선택(후진제거법)
+      회귀계수(기울기)     특성중요도
+#로지스틱 회귀 모형, 의사결정나무 계열의 모형을 사용할 수 있음
+rfe=RFE(model, n_features_to_select=15) #변수 15개 선택
+fit=rfe.fit(X,y)
+print(fit.n_features_)
+print(fit.support_) #변수 선택 여부
+print(fit.ranking_)
+print(X.columns[fit.support_])
+
+
+
+'sex', 'sibsp', 'parch', 'adult_male', 'alone', 'pclass_1', 'pclass_3',
+       'deck_A', 'deck_B', 'deck_C', 'deck_E', 'deck_F', 'deck_G',
+       'embarked_C', 'embarked_S'
+
+
+
+
+
+X1=[[0,0,1],
+    [0,1,0],
+    [1,0,0],
+    [0,1,1],
+    [0,1,0],
+    [0,1,1]]
+
+	분산 = 정보량
+
+
+
+from sklearn.feature_selection import VarianceThreshold
+sel=VarianceThreshold(threshold=(0.8*(1-0.8))) #분산 80% 기준
+sel.fit_transform(X1)
+
+
+		독립		종속
+		평수 강변		주택가격
+
+						상관관계 있다	없다
+						종속		독립
+
+
+from sklearn.feature_selection import chi2, SelectKBest
+#카이제곱검정통계값 기준
+#2개의 변수가 서로 독립인지 아닌지(상관관계가 없는지, 있는지)를 확인하고자 할 때 사용
+#독립변수와 종속변수 간의 관계가 독립이라면 해당 변수는 모델링에 중요하지 않은 변수이므로 제거, 독립이 아니라면 모델링에 필요한 변수로 채택
+selector1 = SelectKBest(chi2, k=15) #개수를 지정하지 않으면 50%로 감소
+X_train1 = selector1.fit_transform(X_train, y_train)
+X_test1 = selector1.transform(X_test)
+X_train1.shape
+
+
+
+
+from sklearn.feature_selection import SelectFromModel 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import GradientBoostingClassifier
+#유의한 변수 선택, 개수 지정을 하지 않음
+RFselector=SelectFromModel(estimator=RandomForestClassifier()).fit(X,y)
+GBMselector=SelectFromModel(estimator=GradientBoostingClassifier()).fit(X,y)
+LRselector=SelectFromModel(estimator=LogisticRegression(max_iter=1000)).fit(X,y)
+
+
+
+model=KNeighborsRegressor(n_neighbors=2)
+	k 최근접이웃 회귀
+
+
+
+# X1 : 상대적 크기
+# X2 : 건축 표면적
+# X3 : 벽체 면적
+# X4 : 지붕 면적
+# X5 : 전체 높이
+# X6 : 건물의 방위
+# X7 : 유리창 면적
+# X8 : 유리창 면적의 분산
+# Y1 : 난방 하중
+# Y2 : 냉방 하중
+
+
+
+
+from sklearn.neighbors import KNeighborsRegressor
+model=KNeighborsRegressor(n_neighbors=2)
+		회귀
+model.fit(X_train_scaled, y_train)
+model.predict(X_test_scaled)[:10]
+
+array([15.29 , 10.455, 36.3  , 16.695, 32.54 , 28.94 , 28.485, 28.945,
+       28.915, 30.615])
+
+array([15.18, 10.32, 37.26, 16.95, 32.26, 27.9 , 28.18, 28.95, 29.07,
+       23.8 ])
+
+
+
+model.score(X_test_scaled,y_test) # r squared 모형의 설명력   1.0
+0.9488237490773516  
+
+	
+
+
+	분류 - 분류 정확도 
+	회귀 - 오차
+
+
+from sklearn.metrics import mean_squared_error
+print(mean_squared_error(y_test, model.predict(X_test_scaled))) 
+	평균 제곱 오차	실제		출력
+print(mean_squared_error(y_test, model.predict(X_test_scaled))**0.5) # rmse
+
+
+
+
+	실제	5	3	1	0	7
+	출력	4	5	0	2	9
+	오차	1	-2	1	-2	-2
+	절대오차	1	2	1	2	2
+	제곱오차	1	4	1	4	4
+	제곱근오차
+
+
+
+
+
+
+
+
+from sklearn.neighbors import KNeighborsClassifier
+model=KNeighborsClassifier(n_neighbors=1)
+model.fit(X_train,y_train)
+print(model.score(X_train,y_train))
+print(model.score(X_test,y_test))
+
+
+
+
+from sklearn.model_selection import GridSearchCV
+params={
+    'n_neighbors': list(range(1,11)),
+	이웃의 수
+    'algorithm': ['ball_tree','kd_tree'],
+	알고리즘
+    'weights': ['uniform','distance'],
+	가중치
+    'p': [1,2]
+	거리계산방식
+}
+gcv=GridSearchCV(model, params, cv=3)
+				교차검증횟수
+gcv.fit(X,y)
+
+
+print(gcv.best_score_)
+print(gcv.best_params_)
+print(gcv.best_estimator_)
+
+
+0.9866666666666667
+{'algorithm': 'ball_tree', 'n_neighbors': 4, 'p': 2, 'weights': 'uniform'}
+						직선거리
+KNeighborsClassifier(algorithm='ball_tree', n_neighbors=4)
+
+
+
+result=cross_val_score(model,X,y,cv=10)
+					교차검증횟수
+
+
+from sklearn.model_selection import validation_curve
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC 
+# train_scores,test_scores=validation_curve(KNeighborsClassifier(),X,y,param_name='n_neighbors',param_range=list(range(2,6)),cv=3,scoring='accuracy',n_jobs=-1)
+import numpy as np 
+
+param_range = [0.01, 0.1, 1]
+				
+train_scores, test_scores = validation_curve(
+    SVC(), X, y, param_name="gamma", param_range=param_range,
+    cv=2, scoring="accuracy", n_jobs=1)
+
+
+
+
+
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler 
+pipe=Pipeline([
+    ('scl',StandardScaler()),
+	전처리 - 스케일링, 평균0,표준편차1
+    ('clf',KNeighborsClassifier())
+	기계학습
+])
+param_grid=[
+    {
+        'clf__weights':['uniform','distance'],
+        'clf__p': [1,2],
+        'clf__n_neighbors': list(range(2,6))
+    }
+]
+gs=GridSearchCV(estimator=pipe, param_grid=param_grid, 
+		분류기			후보변수	
+scoring='accuracy',cv=3,n_jobs=-1)
+	평가기준	   교차검증횟수		n_jobs cpu 코어 수 -1 모든 코어
+gs.fit(X,y)
+
+
+
+0.8744733532844969
+{'clf__n_neighbors': 4, 'clf__p': 2, 'clf__weights': 'uniform'}
+Pipeline(steps=[('scl', StandardScaler()),
+                ('clf', KNeighborsClassifier(n_neighbors=4))])
+
+
+
+

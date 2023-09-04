@@ -1,0 +1,321 @@
+의사결정나무
+사례기반추론
+
+자연어 처리 프로젝트(2차 프로젝트)
+	프로젝트 주제 선정, 조편성
+	프로젝트 계획서 작성
+
+
+
+
+cv = KFold(5, shuffle=True, random_state=0)
+          세트수
+	cross validation
+	교차	검증
+
+	100개
+
+	
+20	20	20	20	20
+
+
+X=df[df.columns[:-2]]
+y=df['Species']
+								-2	-1
+['SepalLength', 'SepalWidth', 'PetalLength', 'PetalWidth', 'Name', 'Species'],
+df.columns[0:-2]
+
+	시작:멈춤
+	start:stop
+
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=10)
+						  검증용 비율
+
+	
+	train	test
+	80	20
+	70	30
+
+
+
+
+
+from sklearn.datasets import load_iris
+data = load_iris()
+#플로팅을 하기 위하여 변수 2개만 사용(꽃잎의 길이와 폭)
+X = data.data[:, 2:]
+		[행, 열]
+		: 	모든 행
+		2:	index 2~끝까지
+ 0      1   2    3
+[5.1, 3.5, 1.4, 0.2],
+
+
+	0	
+
+
+y = data.target
+feature_names = data.feature_names[2:]
+
+
+
+
+
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import confusion_matrix
+for i in range(1,6):
+		1~5
+    plt.figure()
+	그래프 객체 생성
+    model = DecisionTreeClassifier(max_depth=i, random_state=0).fit(X, y)
+					최대 단계
+    display(draw_decision_tree(model))
+    plot_decision_regions(X, y, model, f"Depth {i}")
+    plt.show()
+    print(confusion_matrix(y, model.predict(X)))
+#출력결과가 스크롤이 될 경우 output의 왼쪽셀을 클릭하면 전체보기를 할 수 있음    
+
+
+
+
+
+
+from sklearn import tree
+from IPython.display import Image, display
+import pydotplus
+def draw_decision_tree(model):
+    dot_data = tree.export_graphviz(model, out_file=None,
+        feature_names=feature_names,filled=True, rounded=True, special_characters=True)
+    graph = pydotplus.graph_from_dot_data(dot_data)
+    return Image(graph.create_png())
+
+
+
+
+
+
+
+
+
+
+from sklearn.metrics import classification_report
+print(classification_report(y, model.predict(X)))
+			실제값        예측값
+
+
+              precision    recall  f1-score   support
+		모델정확도	   실제현상  조화평균	샘플수
+           0       1.00      1.00      1.00        50
+           1       1.00      0.98      0.99        50
+           2       0.98      1.00      0.99        50
+
+    accuracy                           0.99       150	정확도
+   macro avg       0.99      0.99      0.99       150
+weighted avg       0.99      0.99      0.99       150
+
+
+
+
+
+
+	30	30	30	30	30
+	O	O	O	O	X
+	O	O	O	X	O
+	O	O	X	O	O
+	O	X	O	O	O
+	X	O	O	O	O	
+
+from sklearn.model_selection import KFold, cross_val_score
+cv = KFold(5, shuffle=True, random_state=0)
+         세트수	섞음		랜덤기준
+i=1
+train_scores=[]
+test_scores=[]
+for train_index, test_index in cv.split(X,y):
+    print(i,'fold')
+    X_train, X_test = X[train_index,], X[test_index,]
+    y_train, y_test = y[train_index], y[test_index]
+    model = DecisionTreeClassifier(random_state=0)
+    model.fit(X_train, y_train)
+    score = model.score(X_train, y_train)
+    print(score)
+    train_scores.append(score)
+    score = model.score(X_test, y_test)
+    print(score)
+    test_scores.append(score)
+    i+=1
+    
+print('평균')
+print(np.mean(train_scores))
+print(np.mean(test_scores))
+
+print('최대')
+print(np.max(train_scores))  
+print(np.max(test_scores))
+
+
+
+평균
+0.9933333333333334
+0.9466666666666667
+최대
+1.0
+1.0
+
+model = DecisionTreeClassifier(random_state=0)
+cross_val_score(model, X, y, scoring="accuracy", cv=cv).mean()
+					정확도
+
+
+
+학습용 1.0
+검증용 0.9666666666666667
+
+	과적합 over fitting
+
+
+
+from sklearn.model_selection import GridSearchCV
+params={
+    'max_depth': list(range(1,11)),
+	가지치기		1~10
+    'criterion': ['gini','entropy'],
+		     혼잡도 0 - 정리 완료
+				[0,100]
+				[100,0]
+			혼잡도 최대 [50,50]
+	분류평가	gini 0.0~0.5 / entropy 0.0 ~ 1.0
+    'max_leaf_nodes': list(range(2,11)),
+    'min_samples_split': [2,3,4]
+	분기에 필요한 최소 샘플수
+}
+gcv=GridSearchCV(model, params, cv=3) 
+gcv.fit(X,y)
+
+
+
+
+
+
+print(gcv.best_score_)
+print(gcv.best_params_)
+print(gcv.best_estimator_)
+
+
+0.9733333333333333
+{'criterion': 'gini', 'max_depth': 4, 'max_leaf_nodes': 7, 'min_samples_split': 2}
+DecisionTreeClassifier(max_depth=4, max_leaf_nodes=7, random_state=0)
+
+
+ k-최근접 이웃 알고리즘(k-NN, k-Nearest Neighbor)
+
+		1개
+
+
+
+
+
+
+X = [[0], [1], [2], [3]]
+
+y = [0, 0, 1, 1]
+
+
+
+
+
+
+from sklearn.neighbors import KNeighborsClassifier
+
+X=[[0],[1],[2],[3]]
+    0   0   1   1
+y=[0,0,1,1]
+knn=KNeighborsClassifier(n_neighbors=3)
+				가장 가까운 이웃의 수
+knn.fit(X,y)
+print(knn.predict([[1.1]]))
+print(knn.predict_proba([[0.9]]))
+	   0확률          1확률
+	[[0.66666667 0.33333333]]
+
+print(knn.predict([[0.9]]))
+
+
+from sklearn.neighbors import NearestNeighbors
+samples=[[0,0,0],[0,0.5,0],[1,1,0.2]]
+nn=NearestNeighbors(n_neighbors=1)
+nn.fit(samples)
+print(nn.kneighbors([[1,1,1]])) #거리 0.8, 세번째로 분류
+
+(array([[0.8]]), array([[2]], dtype=int64))
+
+
+
+
+from sklearn.neighbors import KNeighborsRegressor
+X=[[40],[45],[60],[70]]
+y=[20,22,30,35]
+neigh=KNeighborsRegressor(n_neighbors=2)
+neigh.fit(X,y)
+print(neigh.predict([[65]]))
+print(neigh.predict(X))
+
+
+
+
+
+
+
+from math import sqrt 
+import numpy as np 
+def distance(p,m):
+    items=[]
+    for i in range(len(p-1)):
+        d=sqrt((m[0]-p[i][0])**2 + (m[1]-p[i][1])**2)
+        items.append(d)
+    return items 
+
+points=np.array(list(zip(X,y)))
+r=distance(points, mypoint)
+print(r)
+m=min(r)
+i=np.argmin(r)
+	최소값의 인덱스
+print(i)
+print(points[i])
+
+from scipy.spatial import distance 
+results=[]
+for point in points:
+    dist=distance.euclidean(point,mypoint)
+    results.append(dist)
+
+results     
+
+
+
+
+def distance(p,m):
+    items=[]
+    for i in range(len(p-1)):
+        d=abs(m[0]-p[i][0])+abs(m[1]-p[i][1])
+        items.append(d)
+    return items 
+
+points=np.array(list(zip(X,y)))
+r=distance(points, mypoint)
+print(r)
+m=min(r)
+i=np.argmin(r)
+print(i)
+print(points[i])
+
+
+
+
+
+
+

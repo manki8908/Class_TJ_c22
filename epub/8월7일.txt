@@ -1,0 +1,222 @@
+데이터 전처리
+로지스틱 회귀분석(R)
+의사결정나무
+
+자연어 처리 프로젝트(2차 프로젝트)
+	프로젝트 주제 선정, 조편성
+	프로젝트 계획서 작성
+
+
+sns.countplot(titanic.embark_town) => sns.displot(titanic.embark_town)
+
+
+imputer_embark_town=SimpleImputer(strategy='most_frequent')
+#titanic['embark_town']=imputer_embark_town.fit_transform(titanic[['embark_town']])
+#titanic['embarked']=imputer_embark_town.fit_transform(titanic[['embarked']])
+msno.matrix(titanic)
+
+
+
+from sklearn.impute import SimpleImputer 
+imputer=SimpleImputer(strategy='most_frequent') 
+				범주형
+
+				숫자 mean / median
+				   정규     비정규
+
+				시계열
+
+					11
+					12
+					13
+
+titanic=pd.DataFrame(imputer.fit_transform(titanic),columns=titanic.columns)
+titanic
+
+
+from sklearn.preprocessing import StandardScaler 
+scaler=StandardScaler() #평균 0, 표준편차 1
+df2=scaler.fit_transform(df) 
+df3=pd.DataFrame(df2, columns=df.columns) 
+df3 
+
+
+
+
+from sklearn.preprocessing import RobustScaler
+scaler=RobustScaler() #중앙값 0, IQR 1 로 스케일링
+X3=scaler.fit_transform(X2) 
+X3
+
+=IF(A2="NA",AVERAGE($A$2:$A$154),A2)
+
+=if(조건식, true, false)
+
+
+
+=IF(B2>AVERAGE($B$2:$B$154),1,0)
+
+
+
+#로지스틱 회귀모델 생성
+
+model <- glm(Result ~ ., data=train)
+             종속 ~ 독립
+			. 나머지 모든 변수
+
+#모델정보 요약
+
+summary(model)
+
+
+
+
+
+train<- df_samp[idx_train,]
+X_train<- train[,-4]
+y_train<- train[,4]
+
+test<- df_samp[-idx_train,]
+X_test<- test[,-4]
+y_test<- test[,4]
+
+
+df<- data.frame(x=seq(-5,5,length.out=100))
+df 
+df$y <- exp(df$x)/(1+exp(df$x))
+df$y
+win.graph(); plot(df, type='l')
+
+
+library(dplyr)
+df<- df %>% select(-Ozone, -Month, -Day)
+head(df)
+
+
+model<- glm(Result ~ . , data=train)
+	    종속 ~ 독립
+		. 모든 변수
+summary(model)
+
+
+
+Coefficients:
+회귀계수(기울기
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -1.3128386  0.4654264  -2.821  0.00567 ** 
+Solar.R      0.0005345  0.0004536   1.179  0.24108    
+Wind        -0.0128290  0.0135010  -0.950  0.34404    
+Temp         0.0237463  0.0049519   4.795 5.04e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+       105        116        118        119        121        125 
+0.61873979 0.71005372 0.42144311 0.45842080 0.45522596 0.52483616 
+       128        131        136        144 
+0.43147962 0.28548642 0.17250235 0.27358153 
+
+
+	0.0 ~ 1.0
+	0.5 > 1 => 1
+	    < 1 => 0
+
+	0		1	2
+
+118 4.090108e-21 2.041790e-07 9.999998e-01
+124 2.520210e-12 8.748620e-02 9.125138e-01
+
+new_result<- c()
+for(i in 1:nrow(result)){
+  for(j in 1:ncol(result)){
+    if(result[i,j]==1){
+      new_result[i]<- j-1
+    }
+  }
+}
+
+        1 2 3
+        0 1 2 
+	1 0 0
+
+reduced<-step(model, direction='backward')
+
+	후진제거법
+	전진선택법
+
+
+
+
+
+
+
+biggest <- formula(glm(class ~ .,train,family=binomial))
+biggest
+	최대모델
+min.model = glm(class ~ 1,train,family=binomial)
+	최소모델
+model2<- step(min.model, direction='forward',scope=biggest)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

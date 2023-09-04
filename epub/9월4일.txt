@@ -1,0 +1,972 @@
+Django
+	상품관리
+	ajax
+
+이미지 분석
+
+
+
+
+python manage.py runserver
+
+
+
+
+
+
+사용자 테이블
+
+	권한 관련 필드
+	level	1~10
+
+
+
+ajax
+	Asynchronous JavaScript and XML
+	비동기적인		자바스크립트   xml
+
+	동기적	sync	순서대로, 직렬			순서가 중요한 작업
+	비동기적	async	여러 작업이 한꺼번에, 병렬		속도가 중요
+	
+
+
+
+
+
+
+import hashlib
+
+
+
+
+
+<form action="gugu" method="post">
+	   서버주소   	전달  
+{% csrf_token %}
+number : <input type="text" name="num">
+				변수명
+<input type="submit" value="확인">
+	제출
+</form>
+
+	num
+	'5'
+
+
+def gugu(request):
+    if request.method == "GET":
+        return render(request, 'ajax/gugu.html')
+    elif request.method == "POST":
+        num = int(request.POST['num'])
+			post방식 변수
+        result = ''
+        for i in range(1, 10):
+            result += f'{num} x {i} = {num * i}<br>'
+        return render(request, 'ajax/gugu_result.html', {'result': result})
+
+
+{% autoescape off %} <!-- html 코드가 그대로 보이지 않도록 처리 -->
+{{result}}
+{% endautoescape %}
+
+
+
+
+
+
+	입력	views.py	결과
+
+
+
+number :
+<input type="text" id="num">
+<input type="button" id="button1" value="확인">
+<div id="result">결과 출력 영역</div>
+
+<script src="http://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+
+	$(function(){}) 자동실행
+
+$(function(){
+    $("#button1").click(function(){
+	# id  id가 button1 클릭하면
+        let num=$("#num").val();
+		<input type="text" id="num" value="   ">
+	let 변수
+	const 상수
+
+	백그라운드 실행
+        $.ajax({
+            url: "gugu_ajax",
+            data: {"num":num},
+		전달 데이터
+            success: function(txt){
+				응답텍스트
+		콜백 함수
+                $("#result").html(txt.result);
+
+		<div id="result">결과 출력 영역</div>	
+				innerHTML 형식
+
+            }
+        });
+    });
+});
+</script>
+
+
+def gugu_ajax(request):
+    num = int(request.GET['num'])
+		int('5')=>5
+
+    result = ''
+    for i in range(1, 10):
+        result += f'{num} x {i} = {num * i}<br>'
+    return JsonResponse({'result': result})
+			  변수명    출력값
+
+	json : javascript object notation
+		자바스크립트 객체     표기법
+		{key:value,key:value}
+
+
+
+
+아이디 : <input id="userid"><br>
+비번 : <input type="password" id="passwd"><br>
+<input type="button" value="확인" id="btnLogin">
+<div id="div1">결과 출력 영역</div>
+
+
+
+    $("#btnLogin").click(function(){
+	# id		클릭하면
+<input type="button" value="확인" id="btnLogin">
+
+        let userid=$("#userid").val();
+			# id가 userid value
+아이디 : <input id="userid"><br>
+        let passwd=$("#passwd").val();
+        let params={"userid":userid,"passwd":passwd};
+
+
+        $.ajax({
+            url: "login_check",
+            data: params,
+            success: function(txt){
+                $("#div1").html(txt.result);
+            }
+        });
+    });
+
+
+
+def login_check(request):
+    try:
+        userid = request.GET['userid']
+        passwd = request.GET['passwd']
+        passwd = hashlib.sha256(passwd.encode()).hexdigest()
+        row = Member.objects.filter(userid=userid, passwd=passwd)[0]
+		테이블 모든    조건                                   첫번째
+
+        if row is not None:
+            result = row.name + '님 환영합니다.'
+        return JsonResponse({'result': result})
+    except:
+        return JsonResponse({'result': '아이디 또는 비밀번호가 일치하지 않습니다.'})
+
+
+
+select * from ajax_keyword where word like '%test%';  
+
+		테이블		필드명       %키워드%
+
+
+
+
+
+키워드를 입력하세요
+<input type="text" id="search">
+<div id="div1">검색 결과 출력 영역</div>
+
+
+
+<style>
+    div {
+        position:absolute; left:160px; top:30px;
+		절대좌표          
+    }
+</style>
+
+	keydown
+	keyup
+
+    $("#search").keyup(function() {
+        let search = $("#search").val();
+        if (search.length == 0) {
+		글자수가 0이면
+            $("#div1").css("visibility","hidden");
+					숨김
+        }else{
+            $("#div1").css("visibility","visible");
+					표시
+            $.ajax({
+                url : "keyword_list",
+                data : {"search" : search},
+                success : function(txt) {
+					json객체 리턴
+                    $("#div1").html("");
+			기존값 초기화
+                    for(i=0;i < txt.length;i++){
+                        $("#div1").append(txt[i]+"<br>");
+                    }
+                }
+            });
+        }
+
+
+def keyword_list(request):
+    keyword = request.GET['search']
+    rows = Keyword.objects.filter(word__contains=keyword).all()
+	   테이블            조건   필드명__contains=키워드
+					where 필드명 like '%키워드%'
+    rows = list(rows.values())
+    items = []
+    for row in rows:
+        items.append(row['word'].replace(keyword,
+"<span style='color:red'>" + keyword + "</span>"))
+    # 리턴값이 dictionary가 아닌 경우 safe=False
+    return JsonResponse(items, safe=False)
+
+
+
+from tensorflow.keras import datasets
+from keras.utils import np_utils
+# 데이터 준비
+(X_train, y_train), (X_test, y_test) = datasets.mnist.load_data()
+print(y_train[:5])
+#one hot encoding
+y_train = np_utils.to_categorical(y_train)
+print(y_train[:5])
+y_test = np_utils.to_categorical(y_test)
+L, W, H = X_train.shape
+# -1 샘플의 개수
+X_train = X_train.reshape(-1, W * H)
+			행       열
+				28x28=768
+X_test = X_test.reshape(-1, W * H)
+X_train = X_train / 255.0
+	0~255=> 0.0 ~ 1.0
+X_test = X_test / 255.0
+
+
+[5 0 4 1 9]
+
+[[0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]
+ [1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+
+
+
+from keras.layers import Dense, Dropout
+from keras.models import Sequential
+# 분류 DNN 모델 구현 함수
+def make_model(input_number, layers, output_number):
+    #모델 초기화
+    model = Sequential()
+    model.add(Dense(128, activation='relu', input_shape=(input_number,)))
+		   out        활성화                       입력
+    model.add(Dense(64, activation='relu'))  
+    model.add(Dense(32, activation='relu'))      
+    #드롭아웃 계층 Dropout(p) p라는 확률로
+    #   출력 노드의 신호를 보내다 말다 함, 과적합 방지
+    model.add(Dropout(0.2))
+			20% off
+    #출력층
+    model.add(Dense(output_number, activation='softmax', name='output'))
+    model.compile(loss='categorical_crossentropy',
+                     optimizer='adam',
+                     metrics=['accuracy'])
+    return model    
+
+
+hidden_layers = [128, 64, 32]
+
+
+
+input_number = 784 #28x28
+#은닉계층 3개, 은닉노드수 128개, 64개, 32개
+hidden_layers = [128, 64, 32]
+print(hidden_layers)
+number_of_class = 10
+output_number = number_of_class
+#모델 생성
+model = make_model(input_number, hidden_layers, output_number)
+
+
+
+hist = model.fit(X_train, y_train, epochs=5, batch_size=128, validation_split=0.2)
+						32		20% 조기학습종료,파라미터최적화
+
+[0.10259908437728882, 0.9692999720573425]
+  loss			accuracy
+
+
+
+
+
+SEED = 1234
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+torch.cuda.manual_seed(SEED)
+# gpu 실행 결과 고정
+torch.backends.cudnn.deterministic = True
+
+
+
+#데이터셋을 저장할 디렉토리 지정
+ROOT = '.data'
+	. 현재 디렉토리
+	.. 상위
+train_data = datasets.MNIST(root=ROOT,
+                            train=True,
+                            download=True)
+
+
+#정규화
+mean = train_data.data.float().mean() / 255
+std = train_data.data.float().std() / 255
+print(mean)
+print(std)
+
+	데이터 증강
+
+
+# RandomRotation(5) : 이미지를 -5~+5 도 사이에서 임의로 회전
+# RandomCrop : padding 2 추가 후, 28x28 crop
+train_transforms = transforms.Compose([
+                            transforms.RandomRotation(5, fill=(0,)),
+                            transforms.RandomCrop(28, padding=2),
+                            transforms.ToTensor(),
+                            transforms.Normalize(mean=[mean], std=[std])
+                                      ])
+test_transforms = transforms.Compose([
+                           transforms.ToTensor(),
+                           transforms.Normalize(mean=[mean], std=[std])
+                                     ])
+
+
+train_data = datasets.MNIST(root=ROOT,
+                            train=True,
+                            download=True,
+                            transform=train_transforms)
+test_data = datasets.MNIST(root=ROOT,
+                           train=False,
+                           download=True,
+                           transform=test_transforms)
+print(len(train_data))
+print(len(test_data))   
+
+
+
+def plot_images(images):
+    n_images = len(images)
+		샘플수
+    rows = int(np.sqrt(n_images))
+    cols = int(np.sqrt(n_images))
+    fig = plt.figure()
+    for i in range(rows*cols):
+        ax = fig.add_subplot(rows, cols, i+1)
+        ax.imshow(images[i].view(28, 28).cpu().numpy(), cmap='bone')
+
+				28x28 reshape
+				cpu() / cuda() gpu
+
+        ax.axis('off')
+N_IMAGES = 25
+images = [image for image, label in [train_data[i] for i in range(N_IMAGES)]]
+plot_images(images)        
+
+
+
+
+# validation 10% 지정
+VALID_RATIO = 0.9
+n_train_examples = int(len(train_data) * VALID_RATIO)
+n_valid_examples = len(train_data) - n_train_examples
+
+
+# train:validation 9:1
+train_data, valid_data = data.random_split(train_data,
+                                           [n_train_examples, n_valid_examples])
+print(len(train_data))
+print(len(valid_data))
+print(len(test_data))   
+
+	deep copy	데이터 복사
+
+
+
+valid_data = copy.deepcopy(valid_data) #깊은 복사
+valid_data.dataset.transform = test_transforms
+
+a = [1, 2, 3, 4, 5]
+
+	a ==> [10,2,3,4,5]
+	      100번지
+
+	b 
+
+b = a # 원본 리스트는 한개, 리스트 참조변수만 2개
+print(id(a)) #주소값
+print(id(b))
+b[0] = 10
+print('a:',a)
+print('b:',b)
+
+a = [1, 2, 3, 4, 5]
+b = a[:] # 복사본 리스트가 생성됨
+
+	a => [1, 2, 3, 4, 5]
+	b => [1, 2, 3, 4, 5]
+b[0] = 10
+print('a:',a)
+print('b:',b)
+
+
+BATCH_SIZE = 64
+train_iterator = data.DataLoader(train_data,
+                                 shuffle=True,
+                                 batch_size=BATCH_SIZE)
+		미니배치 생성
+
+valid_iterator = data.DataLoader(valid_data,
+                                 batch_size=BATCH_SIZE)
+test_iterator = data.DataLoader(test_data,
+                                batch_size=BATCH_SIZE)
+
+
+
+
+
+
+class MLP(nn.Module):
+    def __init__(self, input_dim, output_dim):
+			28x28		10
+        super().__init__()
+        self.input_fc = nn.Linear(input_dim, 250)
+					in   output
+        self.hidden_fc = nn.Linear(250, 100)
+        self.output_fc = nn.Linear(100, output_dim)
+
+    def forward(self, x):
+        batch_size = x.shape[0]
+        x = x.view(batch_size, -1)
+        h_1 = F.relu(self.input_fc(x))
+        h_2 = F.relu(self.hidden_fc(h_1))
+        y_pred = self.output_fc(h_2)
+        return y_pred, h_2
+
+
+
+INPUT_DIM = 28 * 28
+OUTPUT_DIM = 10
+model = MLP(INPUT_DIM, OUTPUT_DIM)
+
+
+
+# numel() 텐서의 사이즈
+# requires_grad = True 자동미분
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+								미분(학습모드)
+
+print(count_parameters(model))    
+#모형의 파라미터수
+
+
+
+optimizer = optim.Adam(model.parameters())
+criterion = nn.CrossEntropyLoss()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+			gpu					cpu
+model = model.to(device)
+criterion = criterion.to(device)
+
+
+def calculate_accuracy(y_pred, y):
+    top_pred = y_pred.argmax(1, keepdim=True)
+    correct = top_pred.eq(y.view_as(top_pred)).sum()
+                   A.eq(B)
+    acc = correct.float() / y.shape[0]
+    return acc
+
+
+
+def train(model, iterator, optimizer, criterion, device):
+    epoch_loss = 0
+    epoch_acc = 0
+    model.train()
+    # tqdm 프로그레스바 함수, leave 반복 완료시 출력 여부
+    for (x, y) in tqdm(iterator, desc="Training", leave=False):
+        x = x.to(device)
+        y = y.to(device)
+        optimizer.zero_grad()
+        y_pred, _ = model(x)
+        loss = criterion(y_pred, y)
+        acc = calculate_accuracy(y_pred, y)
+        loss.backward()
+        optimizer.step()
+        epoch_loss += loss.item()
+        epoch_acc += acc.item()
+    return epoch_loss / len(iterator), epoch_acc / len(iterator)
+
+
+tot=0
+for i in range(10):
+	  0~9
+	time.sleep(0.1)
+	tot+=i
+print(tot)
+
+
+
+tot=0
+for i in trange(10):
+	time.sleep(0.1)
+	tot+=i
+print(tot)
+
+
+tot=0
+for i in tqdm(range(10)):
+		iterator 반복
+	time.sleep(0.1)
+	tot+=i
+print(tot)
+
+
+
+
+def train(model, iterator, optimizer, criterion, device):
+    epoch_loss = 0
+    epoch_acc = 0
+    model.train()
+    # tqdm 프로그레스바 함수, leave 반복 완료시 출력 여부
+    for (x, y) in tqdm(iterator, desc="Training", leave=False):
+		       반복
+        x = x.to(device)
+        y = y.to(device)
+		cpu / gpu
+        optimizer.zero_grad() 경사 초기화
+        y_pred, _ = model(x) 순전파
+        loss = criterion(y_pred, y) 손실함수
+        acc = calculate_accuracy(y_pred, y) 정확도
+        loss.backward() 역전파 계산
+        optimizer.step() 역전파 수정
+        epoch_loss += loss.item()
+        epoch_acc += acc.item()
+    return epoch_loss / len(iterator), epoch_acc / len(iterator)
+
+
+def evaluate(model, iterator, criterion, device):
+    epoch_loss = 0
+    epoch_acc = 0
+    model.eval() 추론모드(순전파만)
+    with torch.no_grad(): 자동미분x
+        for (x, y) in tqdm(iterator, desc="Evaluating", leave=False):
+            x = x.to(device)
+            y = y.to(device)
+            y_pred, _ = model(x)
+            loss = criterion(y_pred, y)
+            acc = calculate_accuracy(y_pred, y)
+            epoch_loss += loss.item()
+            epoch_acc += acc.item()
+    return epoch_loss / len(iterator), epoch_acc / len(iterator)
+
+
+
+EPOCHS = 3
+best_valid_loss = float('inf') # 양의 무한대(최대값으로 설정)
+for epoch in trange(EPOCHS):
+    start_time = time.monotonic() #운영체제가 부팅된 이후의 시간(단조시간)
+			타임스탬프 1970.1.1
+
+    train_loss, train_acc = train(model, train_iterator, optimizer, criterion, device)
+    valid_loss, valid_acc = evaluate(model, valid_iterator, criterion, device)
+    if valid_loss < best_valid_loss:
+        best_valid_loss = valid_loss
+        torch.save(model.state_dict(), 'mlp-model.pt')
+		모델 저장
+    end_time = time.monotonic()
+    epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+    print(f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
+    print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
+    print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
+
+
+
+#학습이 완료된 모형 로드
+model.load_state_dict(torch.load('mlp-model.pt'))
+test_loss, test_acc = evaluate(model, test_iterator, criterion, device)
+
+
+
+
+def get_predictions(model, iterator, device):
+    model.eval() 추론모드
+    images = []
+    labels = []
+    probs = []
+    with torch.no_grad(): 미분x
+        for (x, y) in iterator:
+            x = x.to(device)
+            y_pred, _ = model(x)
+            y_prob = F.softmax(y_pred, dim=-1)
+            images.append(x.cpu())
+            labels.append(y.cpu())
+            probs.append(y_prob.cpu())
+            
+    images = torch.cat(images, dim=0) #텐서 연결 , dim=0 세로 방향, dim=1 가로 방향
+    labels = torch.cat(labels, dim=0)
+    probs = torch.cat(probs, dim=0)
+    return images, labels, probs
+
+# 오차가 큰 출력값 정리
+incorrect_examples = []
+for image, label, prob, correct in zip(images, labels, probs, corrects):
+    if not correct:
+        incorrect_examples.append((image, label, prob))
+        
+incorrect_examples.sort(reverse=True,
+			내림차순
+                        key=lambda x: torch.max(x[2], dim=0).values)
+				lambda input : output
+
+def get_representations(model, iterator, device):
+    model.eval()
+    outputs = []
+    intermediates = []
+    labels = []
+    with torch.no_grad():
+        for (x, y) in tqdm(iterator):
+            x = x.to(device)
+            y_pred, h = model(x)
+            outputs.append(y_pred.cpu())
+            intermediates.append(h.cpu())
+            labels.append(y)
+    #최종 출력값
+    outputs = torch.cat(outputs, dim=0)
+    #출력 직전의 레이어
+    intermediates = torch.cat(intermediates, dim=0)
+    labels = torch.cat(labels, dim=0)
+    return outputs, intermediates, labels
+
+
+
+
+def get_pca(data, n_components=2):
+    pca = decomposition.PCA()
+    pca.n_components = n_components
+		주성분의 수
+    pca_data = pca.fit_transform(data)
+    return pca_data
+
+
+
+
+
+
+
+import tensorflow as tf
+import matplotlib.pyplot as plt
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
+IMG_CHANNELS = 3
+
+def read_and_decode(filename, reshape_dims):
+  img = tf.io.read_file(filename)
+  # jpeg 포맷을 픽셀 데이터로 변환
+  img = tf.image.decode_jpeg(img, channels=IMG_CHANNELS)
+  # 0~255 => 0~1 정규화
+  img = tf.image.convert_image_dtype(img, tf.float32)
+  return tf.image.resize(img, reshape_dims)
+
+def show_image(filename):
+  img = read_and_decode(filename, [IMG_HEIGHT, IMG_WIDTH])
+  plt.imshow((img.numpy()))
+
+show_image("d:/data/flowers/daisy/754296579_30a9ae018c_n.jpg")
+
+
+tulips = tf.io.gfile.glob("d:/data/flowers/tulips/*.jpg")
+f, ax = plt.subplots(1, 5, figsize=(15,15))
+for idx, filename in enumerate(tulips[:5]):
+  img = read_and_decode(filename, [IMG_HEIGHT, IMG_WIDTH])
+  ax[idx].imshow((img.numpy()));
+  ax[idx].axis('off')
+
+# label을 추가한 함수
+def decode_csv(csv_row):
+  record_defaults = ["path", "flower"]
+  filename, label_string = tf.io.decode_csv(csv_row, record_defaults)
+  img = read_and_decode(filename, [IMG_HEIGHT, IMG_WIDTH])
+  label = tf.argmax(tf.math.equal(CLASS_NAMES, label_string))
+  return img, label
+
+# Dataset.map(f) : 함수 f를 입력 데이터셋의 각 요소에 적용하여 새로운 데이터셋을 생성
+train_dataset = (tf.data.TextLineDataset("d:/data/flowers/train_set.csv").map(decode_csv)).batch(32)
+eval_dataset = (tf.data.TextLineDataset("d:/data/flowers/eval_set.csv").map(decode_csv)).take(200).batch(32)
+
+
+	TextLineDataset(파일경로).map(f).take(샘플수)
+				      .skip(100)
+				   (decode_csv)
+
+
+
+
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Flatten, Dense
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+
+model = tf.keras.Sequential([
+              Flatten(input_shape=(IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS)),
+              Dense(len(CLASS_NAMES), activation='softmax')
+])
+# from_logits=False 소프트맥스를 사용하지 않는 경우
+model.compile(optimizer='adam',
+              loss=SparseCategoricalCrossentropy(from_logits=False),
+              metrics=['accuracy'])
+model.summary()       
+
+
+
+	0 / 1 / 2 /3 /4 => SparseCategoricalCrossentropy
+
+	원핫인코딩 => CategoricalCrossentropy
+
+
+
+
+
+
+from keras.datasets import mnist
+from tensorflow.keras.utils import to_categorical
+#데이터 로딩
+(train_images, train_labels), (test_images, test_labels)=mnist.load_data()
+#케라스에서 처리할 수 있는 형태로 변환  샘플개수x가로x세로x차원
+train_images=train_images.reshape((60000,28,28,1))
+				   샘플수 w   h  c
+train_images=train_images.astype("float32") / 255
+
+		0.0 ~ 1.0
+
+test_images=test_images.reshape((10000,28,28,1))
+test_images=test_images.astype("float32") / 255
+#원 핫 인코딩
+train_labels=to_categorical(train_labels)
+test_labels=to_categorical(test_labels)
+print(train_labels[:2])
+
+
+from keras.layers import Conv2D,MaxPooling2D,Flatten,Dense  
+from keras.models import Sequential
+#모델 생성
+model=Sequential()
+#convolution layer, 필터개수 32, 필터크기 3x3,
+#입력데이터 28x28x1 (흑백이미지1, 컬러이미지3)
+model.add(Conv2D(32, (3,3), activation="relu", input_shape=(28,28,1)))
+                필터수 필터사이즈                              
+#맥스풀링 필터사이즈 2x2
+model.add(MaxPooling2D(2,2))
+
+	1 2 3 4		6 8
+	5 6 7 8		9 7
+	9 8 7 6
+	5 4 3 2
+
+
+model.add(Conv2D(64,(3,3),activation="relu"))
+model.add(MaxPooling2D(2,2))
+model.add(Conv2D(64,(3,3),activation="relu"))
+#fully connected layer로 변환(완전연결층)
+model.add(Flatten()) 1차원으로
+
+model.add(Dense(64,activation="relu"))
+#출력층 10개의 숫자로 분류
+model.add(Dense(10,activation="softmax"))          
+model.compile(optimizer="rmsprop", loss="categorical_crossentropy",metrics=["accuracy"])
+model.summary()
+
+
+from flask import Flask, render_template, request
+from PIL import Image
+import numpy as np
+from keras.models import load_model
+
+app = Flask(__name__)
+플라스크앱
+
+
+@app.route('/')
+def main():
+    return render_template('mnist/index.html')
+
+
+@app.route('/uploader', methods=['POST'])
+def upload_image():
+    model = load_model('d:/data/mnist/mnist.h5')
+    # 업로드한 파일을 gray scale로 변환
+    img = Image.open(request.files['file'].stream).convert("L")
+    print(type(img))
+    # 업로드한 파일 사이즈가 mnist 이미지 size와 같도록 처리
+    img = img.resize((28, 28))
+			이미지 사이즈 정형화
+    # 넘파이 배열로 변환
+    arr = np.array(img) / 255
+    print(arr.shape)
+    # keras 모형에서 읽을 수 있도록 28x28에서 1x28x28x1로 차원 변경
+    # 이미지개수x가로사이즈x세로사이즈x흑백(1)/컬러(3)
+    arr = arr.reshape(1, 28, 28, 1)
+    import tensorflow as tf
+    with tf.device('/GPU:0'):
+        pred = model.predict(arr)
+        pred = np.argmax(pred, axis=1)
+    return '숫자 이미지: ' + str(pred[0])
+
+
+if __name__ == '__main__':
+    app.run(port=80, threaded=False)
+		포트
+
+	http://도메인:8000
+
+	http://도메인:80
+	http://도메인
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <body>
+    <form action = "uploader" method = "post"
+		   처리주소                 
+          enctype = "multipart/form-data">
+			파일첨부
+      <input type = "file" name = "file" >
+      <input type = "submit" value="확인">
+    </form>
+  </body>
+</html>
+
+
+
+
+input_shape = (image_size, image_size)
+batch_size = 128
+units = 256
+dropout = 0.2
+model = Sequential()
+model.add(SimpleRNN(units=units,
+			출력
+                    dropout=dropout,
+			20% off
+                    input_shape=input_shape))
+			입력
+model.add(Dense(num_labels))
+model.add(Activation('softmax'))
+model.compile(loss='categorical_crossentropy',
+              optimizer='sgd',
+              metrics=['accuracy'])
+model.summary()
+
+
+
+
+
+
+
+#CIFAR-10 데이터셋 : 10가지 컬러 이미지
+# 비행기, 자동차, 새, 고양이, 사슴, 개, 개구리, 말, 배, 트럭
+#6만장 (학습용 5만장, 검증용 1만장)
+#32x32 이미지
+#32x32x3 RGB 컬러 이미지
+# http://www.cs.toronto.edu/~kriz/cifar.html
+from tensorflow.keras import datasets, utils
+def make_data():
+    #다운로드 경로 : 사용자 계정 디렉토리 하위의 .keras 디렉토리
+    (X_train, y_train),(X_test,y_test)=datasets.cifar10.load_data()
+    #원 핫 인코딩 처리
+    y_train=utils.to_categorical(y_train,10)
+    y_test=utils.to_categorical(y_test,10)
+    #데이터 정규화
+    X_train=X_train.astype("float32")
+    X_test=X_test.astype("float32")
+    X_train /= 255
+    X_test /= 255
+    return (X_train,y_train), (X_test,y_test)
+
+
+(X_train,y_train),(X_test,y_test)=make_data()
+
+(50000, 32, 32, 3)
+샘플수   W   H   C(흑백1/컬러3)
+
+
+
+
+
+
+model=make_model()
+
+from keras import optimizers
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Dense,Activation,Flatten, Dropout
+def make_model():
+    model=Sequential()
+    #padding="same" 출력크기를 입력크기와 같게 유지
+    model.add(Conv2D(32,(3,3),padding="same",
+			필터32개, 3x3
+
+
+                     input_shape=X_train.shape[1:],activation='relu'))
+    model.add(Conv2D(32,(3,3),activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2)))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64,(3,3),padding="same",activation='relu'))
+    model.add(Conv2D(64,(3,3),activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2)))
+    model.add(Dropout(0.25))
+    model.add(Flatten()) 1차원으로
+    model.add(Dense(512,activation='relu'))
+    model.add(Dense(10,activation='softmax'))
+    #학습률 0.0001, decay 학습속도를 감소시키는 옵션
+    opt=optimizers.RMSprop(learning_rate=0.0001,decay=1e-6)
+    model.compile(loss="categorical_crossentropy",
+                 optimizer=opt,metrics=["accuracy"])
+    return model
+
+
+
+#학습 시간이 오래 걸림
+import tensorflow as tf
+with tf.device('/GPU:0'):
+                 CPU:0
+    history=model.fit(X_train,y_train,epochs=3,batch_size=32,validation_split=0.2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
