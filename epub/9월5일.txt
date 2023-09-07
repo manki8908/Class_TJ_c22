@@ -1,0 +1,1035 @@
+Django
+	설문조사
+
+이미지 분석
+
+
+
+
+
+from django.contrib import admin
+from django.urls import path, include
+from config import views
+from django.conf import settings
+from django.urls import re_path
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+
+    path('', views.home),
+    path('address/', include('address.urls')),
+    path('memo/', include('memo.urls')),
+    path('book/', include('book.urls')),
+    path('transaction/', include('transaction.urls')),
+    path('procedure/', include('procedure.urls')),
+    path('mymember/', include('mymember.urls')),
+    path('shop/', include('shop.urls')),
+    path('ajax/', include('ajax.urls')),
+]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        re_path(r'^__debug__/', include(debug_toolbar.urls))
+    ]
+
+	re 정규표현식
+
+	^ start
+	__debug__/
+	
+
+
+
+
+from django.db import models
+
+
+class Survey(models.Model):
+	문제
+    survey_idx = models.AutoField(primary_key=True)
+	문제번호		자동증가 일련번호
+    question = models.TextField(null=False)
+    ans1 = models.TextField(null=True)
+    ans2 = models.TextField(null=True)
+    ans3 = models.TextField(null=True)
+    ans4 = models.TextField(null=True)
+    status = models.CharField(max_length=1, default="y")
+				길이 1             진행중
+
+class Answer(models.Model):
+	응답
+    answer_idx = models.AutoField(primary_key=True)
+	응답일련번호
+    survey_idx = models.IntegerField()
+	문제번호
+    num = models.IntegerField()
+	답
+
+
+
+from django.contrib import admin
+from survey.models import Survey, Answer
+
+
+class SurveyAdmin(admin.ModelAdmin):
+    list_display = ("question", "ans1", "ans2", "ans3", "ans4", "status")
+	관리자 화면 필드
+
+admin.site.register(Survey, SurveyAdmin)
+admin.site.register(Answer)
+
+
+
+select * from tab;
+	테이블 목록
+desc survey_survey;
+테이블 필드 정보
+desc survey_answer;
+
+
+select * from survey_survey;
+
+
+
+
+http://127.0.0.1:8000/survey/
+
+
+def main(request):
+    survey = Survey.objects.filter(status="y").order_by("-survey_idx")[0]
+	      테이블  모든     검색       진행중    정렬      내림 필드명      첫번째
+    return render(request, 'survey/main.html', {'survey': survey})
+	템플릿 => 렌더링 => 최종 html
+
+
+<html>
+<head>
+<script>
+function show_result(){
+    location.href="show_result?survey_idx={{survey.survey_idx}}";
+}
+</script>
+</head>
+<body>
+    <h2>온라인 설문조사</h2>
+    <form method="post" action="save_survey">
+					처리주소
+
+def save_survey(request):
+    row = Answer(survey_idx=request.POST['survey_idx'], num=request.POST['num'])
+	  테이블  필드명=값
+    row.save()
+    return render(request, "survey/success.html")
+
+
+        {% csrf_token %}
+        {{survey.question}}<br>
+        <input type="radio" name="num" value="1">{{survey.ans1}}<br>
+        <input type="radio" name="num" value="2">{{survey.ans2}}<br>
+        <input type="radio" name="num" value="3">{{survey.ans3}}<br>
+        <input type="radio" name="num" value="4">{{survey.ans4}}<br>
+
+	radio	 1개만
+	checkbox 여러개
+				변수명     값
+        <br>
+        <input type="hidden" name="survey_idx" value="{{survey.survey_idx}}">
+		숨김필드		변수명			값
+        <input type="submit" value="투표">
+        <input type="button" value="결과 확인" onclick="show_result()">
+    </form>
+</body>
+</html>
+
+
+
+
+
+
+from flask import Flask, render_template, request
+from PIL import Image
+import numpy as np
+from keras.models import load_model
+
+app = Flask(__name__)
+
+
+@app.route('/')
+def main():
+    return render_template('cifar/index.html')
+
+
+    <form action = "uploader" method = "post"
+          enctype = "multipart/form-data">
+      <input type = "file" name = "file" >
+      <input type = "submit" value="확인">
+    </form>
+
+@app.route('/uploader', methods=['POST'])
+def upload_image():
+    model = load_model('d:/data/cifar/cifar.h5')
+				모형
+    img = Image.open(request.files['file'].stream)
+    print(type(img))
+    # 업로드한 파일 사이즈가 원본 이미지 size와 같도록 처리
+    img = img.resize((32, 32))
+    # 넘파이 배열로 변환
+    arr = np.array(img) / 255
+    print(arr.shape)
+    # keras 모형에서 읽을 수 있도록 32x32에서 1x32x32x3으로 차원 변경
+    # 이미지개수x가로사이즈x세로사이즈x흑백(1)/컬러(3)
+    arr = arr.reshape(1, 32, 32, 3)
+    import tensorflow as tf
+    with tf.device('/CPU:0'):
+        pred = model.predict(arr)
+        pred = np.argmax(pred, axis=1)
+        a = int(pred[0])
+    names = ['비행기', '자동차', '새', '고양이', '사슴', '개', '개구리', '말', '배', '트럭']
+    return '이미지 분류 결과: ' + names[a]
+
+
+if __name__ == '__main__':
+    app.run(port=9090, threaded=False)
+
+
+
+
+
+	input1			input2
+		
+
+
+			output
+
+
+
+
+
+num_labels = len(np.unique(y_train))
+y_train = to_categorical(y_train)
+y_test = to_categorical(y_test)
+image_size = x_train.shape[1]
+x_train = np.reshape(x_train,[-1, image_size, image_size, 1])
+x_test = np.reshape(x_test,[-1, image_size, image_size, 1])
+x_train = x_train.astype('float32') / 255
+x_test = x_test.astype('float32') / 255
+
+
+
+input_shape = (image_size, image_size, 1)
+		28		28
+batch_size = 32
+kernel_size = 3
+dropout = 0.4
+n_filters = 32
+
+
+
+
+# left branch
+left_inputs = Input(shape=input_shape)
+x = left_inputs
+filters = n_filters
+for i in range(3):
+    x = Conv2D(filters=filters,
+               kernel_size=kernel_size,
+               padding='same',
+               activation='relu')(x)
+    x = Dropout(dropout)(x)
+    x = MaxPooling2D()(x)
+    filters *= 2
+
+
+
+
+# right branch
+right_inputs = Input(shape=input_shape)
+y = right_inputs
+filters = n_filters
+for i in range(3):
+    y = Conv2D(filters=filters,
+               kernel_size=kernel_size,
+               padding='same',
+               activation='relu',
+               dilation_rate=2)(y)  # 커널의 간격
+    y = Dropout(dropout)(y)
+    y = MaxPooling2D()(y)
+    filters *= 2
+
+
+# left, right 결합
+y = concatenate([x, y])
+y = Flatten()(y) 1차원
+y = Dropout(dropout)(y)
+outputs = Dense(num_labels, activation='softmax')(y)
+# input에 2개의 데이터가 전달됨
+
+
+model = Model([left_inputs, right_inputs], outputs)
+			input			output
+	
+model.compile(loss='categorical_crossentropy',
+              optimizer='adam',
+              metrics=['accuracy'])
+model.summary()
+
+
+
+
+
+
+	Max Pooling
+	Average Pooling
+
+	Global Average Pooling
+	Global Max Pooling
+
+
+	1 2   3 4		6 8		8
+	5 6   7 8 
+
+
+
+
+
+import cv2
+import matplotlib.pyplot as plt 
+
+img = cv2.imread('d:/images/apple.jpg', cv2.IMREAD_COLOR)
+img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+print(img.shape)
+plt.imshow(img,cmap='gray')
+
+
+
+import tensorflow as tf 
+import numpy as np 
+
+img2 = img/255
+
+img2 = np.expand_dims(img2, axis=0)
+	차원 증가             
+img2 = np.expand_dims(img2, axis=3)
+print(img2.shape)
+img3 = tf.keras.layers.Conv2D(1, 3, activation='relu', input_shape=img2.shape)(img2)
+			     필터수  3x3                               
+print(img3.shape)
+
+			(1, 384, 640, 1)
+		         0   1    2   3
+
+(1, 384, 640, 1)
+(1, 382, 638, 1)
+
+(1, 127, 212, 1)
+(127, 212, 1)
+
+# 맥스풀링
+pool1 = tf.keras.layers.MaxPool2D(pool_size=(3, 3), strides=(3, 3))(img3)
+print(pool1.shape)
+
+result1=np.squeeze(pool1, axis=0)
+	차원 감소             
+print(result1.shape)
+
+
+
+
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Reshape((28, 28, 1), input_shape=(28, 28)),
+    tf.keras.layers.Conv2D(32, kernel_size=(3, 3), padding='SAME', 
+			필터수            사이즈		
+activation='relu'),
+    tf.keras.layers.MaxPool2D((2, 2)),
+    tf.keras.layers.Conv2D(64, kernel_size=(3, 3), padding='SAME', activation='relu'),
+    tf.keras.layers.MaxPool2D((2, 2)),
+    tf.keras.layers.Conv2D(128, kernel_size=(3, 3), padding='SAME', activation='relu'),
+    tf.keras.layers.MaxPool2D((2, 2)),
+    tf.keras.layers.GlobalAveragePooling2D(),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.summary()
+
+
+list(range(len(model.layers) - 1, -1, -1))
+
+	range(start, stop, step)
+
+
+
+
+def get_cam_image(model_, x, img_size=(28, 28), layer_idx=None):
+    if layer_idx is None:
+        for layer_idx in range(len(model.layers) - 1, -1, -1):
+            if type(model.layers[layer_idx]) == tf.keras.layers.Conv2D:
+                break
+    cam_model_ = tf.keras.models.Model(model_.inputs, [model_.layers[layer_idx].output, model_.output])
+    conv_out, model_out = cam_model_(x)
+    cam_images_ = np.zeros((x.shape[0], img_size[0], img_size[1]))
+    for i, outs in enumerate(zip(conv_out, model_out)):
+        c_out, m_out = outs
+        predict_idx = np.argmax(m_out)
+        chosen_weight = model_.layers[-1].weights[0][:, predict_idx]
+        cam_img_ = np.zeros(c_out.shape[0:2])
+        for j in range(c_out.shape[2]):
+            cam_img_ += c_out[:, :, j] * chosen_weight[j]
+        cam_images_[i] = cv2.resize(cam_img_.numpy(), img_size)
+    return cam_images_
+
+
+
+
+
+
+
+
+	model.layer[1].output
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+test_index = np.arange(10)
+cam_img = get_cam_image(model, x_test[test_index], img_size=(28, 28))
+for i, idx in enumerate(test_index):
+    plt.subplot(1, 2, 1)
+    plt.imshow(1-x_test[idx], cmap='gray')
+    plt.subplot(1, 2, 2)
+    plt.imshow(1-x_test[idx], cmap='gray')
+    #plt.imshow(cam_img[i], cmap='jet', alpha=0.5)
+    plt.show()
+
+
+
+SEED = 1234
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+torch.cuda.manual_seed(SEED)
+torch.backends.cudnn.deterministic = True
+
+
+
+
+ROOT = '.data'
+train_data = datasets.CIFAR10(root=ROOT, 다운로드 디렉토
+                              train=True,
+                              download=True)
+means = train_data.data.mean(axis=(0, 1, 2)) / 255
+stds = train_data.data.std(axis=(0, 1, 2)) / 255
+print(means, stds)
+
+
+train_transforms = transforms.Compose([
+                           transforms.RandomRotation(5),
+                           transforms.RandomHorizontalFlip(0.5), #50% 확률로 좌우 뒤집음
+                           transforms.RandomCrop(32, padding=2), #패딩 후 32x32 선택
+                           transforms.ToTensor(),
+                           transforms.Normalize(mean=means,
+                                                std=stds)
+                       ])
+test_transforms = transforms.Compose([
+                           transforms.ToTensor(),
+                           transforms.Normalize(mean=means,
+                                                std=stds)
+                       ])
+
+VALID_RATIO = 0.9
+n_train_examples = int(len(train_data) * VALID_RATIO)
+n_valid_examples = len(train_data) - n_train_examples
+train_data, valid_data = data.random_split(train_data,
+                                           [n_train_examples, n_valid_examples])
+
+
+valid_data = copy.deepcopy(valid_data)
+valid_data.dataset.transform = test_transforms
+
+
+
+
+import torch
+x = torch.rand(2,2) 2행 2열 랜덤
+print(x)
+# add_ (+1, 원본 변경)
+x.add_(2) # x = x + 2
+print(x)
+# div_(/1, 원본 변경)
+x.div_(2) # x = x / 2
+print(x)
+
+tensor([[0.9218, 0.8118],
+        [0.8377, 0.4921]])
+tensor([[2.9218, 2.8118],
+        [2.8377, 2.4921]])
+tensor([[1.4609, 1.4059],
+        [1.4188, 1.2461]])
+
+def plot_images(images, labels, classes):
+    n_images = len(images)
+    rows = int(np.sqrt(n_images))
+    cols = int(np.sqrt(n_images))
+    fig = plt.figure(figsize=(10, 10))
+    for i in range(rows*cols):
+        ax = fig.add_subplot(rows, cols, i+1)
+        image = images[i]
+        image_min = image.min()
+        image_max = image.max()
+        image.clamp_(min=image_min, max=image_max) # min, max 설정(범위를 벗어나지 않도록)
+        image.add_(-image_min).div_(image_max - image_min + 1e-5)  
+        ax.imshow(image.permute(1, 2, 0).cpu().numpy()) # permute 차원변경
+        ax.set_title(classes[labels[i]])
+        ax.axis('off')
+
+
+		(2,3,4)
+		(3,4,2)
+
+
+
+
+x = torch.tensor([1, 2, 3]) 1차원 => 2차원  (row,col)
+print(x.repeat(4, 2)) # dim=0 4회, dim=1 2회 반복
+print(x.repeat(4, 2, 1))
+
+
+tensor([[1, 2, 3, 1, 2, 3],
+        [1, 2, 3, 1, 2, 3],
+        [1, 2, 3, 1, 2, 3],
+        [1, 2, 3, 1, 2, 3]])
+
+
+	squeeze() 차원 축소
+	unsqueeze() 차원 늘리기
+
+def plot_filter(images, filter):
+    images = torch.cat([i.unsqueeze(0) for i in images], dim=0).cpu()
+    filter = torch.FloatTensor(filter).unsqueeze(0).unsqueeze(0).cpu() #차원추가
+    filter = filter.repeat(3, 3, 1, 1)
+    n_images = images.shape[0]
+    filtered_images = F.conv2d(images, filter)
+    # 0,1,2,3=>0,2,3,1
+    # samples,channel,width,height    torch의 형식
+    # samples,width,height, channel   matplotlib의 형식
+    images = images.permute(0, 2, 3, 1)
+    filtered_images = filtered_images.permute(0, 2, 3, 1)
+    fig = plt.figure(figsize=(25, 5))
+    for i in range(n_images):
+        image = images[i]
+        image = normalize_image(image)
+        ax = fig.add_subplot(2, n_images, i+1)
+        ax.imshow(image)
+        ax.set_title('Original')
+        ax.axis('off')
+        image = filtered_images[i]
+        image = normalize_image(image)
+        ax = fig.add_subplot(2, n_images, n_images+i+1)
+        ax.imshow(image)
+        ax.set_title('Filtered')
+        ax.axis('off')
+
+
+
+
+N_IMAGES = 10
+images = [image for image, label in [train_data[i] for i in range(N_IMAGES)]]
+#수평선 감지 필터
+horizontal_filter = [[-1, -2, -1],
+                     [ 0,  0,  0],
+                     [ 1,  2,  1]]
+plot_filter(images, horizontal_filter)
+
+
+# 맥스풀링
+def plot_subsample(images, pool_size):
+    images = torch.cat([i.unsqueeze(0) for i in images], dim=0).cpu()
+    pool = F.max_pool2d
+    n_images = images.shape[0]
+    pooled_images = pool(images, kernel_size=pool_size)
+    images = images.permute(0, 2, 3, 1)
+    pooled_images = pooled_images.permute(0, 2, 3, 1)
+    fig = plt.figure(figsize=(25, 5))
+    for i in range(n_images):
+        image = images[i]
+        
+        image = normalize_image(image)
+        ax = fig.add_subplot(2, n_images, i+1)
+        ax.imshow(image)
+        ax.set_title('Original')
+        ax.axis('off')
+        image = pooled_images[i]
+        image = normalize_image(image)
+        ax = fig.add_subplot(2, n_images, n_images+i+1)
+        ax.imshow(image)
+        ax.set_title('Subsampled')
+        ax.axis('off')
+
+
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+criterion = nn.CrossEntropyLoss()
+model = model.to(device)
+criterion = criterion.to(device)
+
+
+
+
+model.load_state_dict(torch.load('tut3-model.pt'))
+	가중치업데이트			학습완료 모델
+test_loss, test_acc = evaluate(model, test_iterator, criterion, device)
+print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
+
+
+def get_predictions(model, iterator, device):
+    model.eval() 추론모드
+    images = []
+    labels = []
+    probs = []
+    with torch.no_grad(): 미분x
+        for (x, y) in iterator:
+            x = x.to(device)
+            y_pred, _ = model(x)
+            y_prob = F.softmax(y_pred, dim=-1)
+            images.append(x.cpu())
+            labels.append(y.cpu())
+            probs.append(y_prob.cpu())
+    images = torch.cat(images, dim=0)
+    labels = torch.cat(labels, dim=0)
+    probs = torch.cat(probs, dim=0)
+    return images, labels, probs
+
+
+
+def get_representations(model, iterator, device):
+    model.eval()
+    outputs = []
+    intermediates = []
+    labels = []
+    with torch.no_grad():
+        for (x, y) in tqdm(iterator):
+            x = x.to(device)
+            y_pred, h = model(x)
+            outputs.append(y_pred.cpu()) 최종 layer   layers[-1]
+            intermediates.append(h.cpu()) layers[-2]
+            labels.append(y)
+    outputs = torch.cat(outputs, dim=0)
+    intermediates = torch.cat(intermediates, dim=0)
+    labels = torch.cat(labels, dim=0)
+    return outputs, intermediates, labels
+
+vgg=VGG19(include_top=False,weights="imagenet",input_shape=(48,48,3))
+
+
+
+
+import warnings
+warnings.filterwarnings("ignore")
+x_train=x_train[::100]
+		start:stop:step
+	
+y_train=y_train[::100]
+x_test=x_test[::100]
+y_test=y_test[::100]
+
+
+
+
+#vgg19 모형에 맞게 48x48로 resize
+import cv2
+def resize_img(img):
+    numberOfImage=img.shape[0]
+    new_array=np.zeros((numberOfImage,48,48,3))
+    for i in range(numberOfImage):
+        new_array[i]=cv2.resize(img[i,:,:,:],(48,48))
+    return new_array
+    
+x_train=resize_img(x_train)
+x_test=resize_img(x_test)
+print(x_train.shape, x_test.shape)
+
+
+vgg=VGG19(include_top=False,weights="imagenet",input_shape=(48,48,3))
+		output 제외		
+
+vgg.summary()
+
+
+
+		model=Sequential()
+		model.add()...
+
+
+
+# transfer learning(전이학습) - 출력층만 학습
+# fine tuning(미세조정) - 모든 레이어 재학습
+
+
+
+		VGG19 + output layer
+
+
+
+
+Total params: 20,024,384
+Trainable params: 20,024,384
+Non-trainable params: 0
+
+
+
+for layer in vgg.layers:
+    layer.trainable=False
+	추론모드로
+
+layer=[
+       layers.Flatten(),
+       layers.Dense(128),
+       layers.Dense(numberOfClass,activation="softmax"),
+       ]
+model=tf.keras.Sequential(vgg.layers+layer)
+                          사전훈련모델  출력
+model.summary()
+
+
+Total params: 20,091,338
+Trainable params: 66,954
+Non-trainable params: 20,024,384
+
+
+
+import gc
+tf.keras.backend.clear_session()
+gc.collect()
+
+	garbage collection
+	쓰레기 수집
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# BatchNorm2d : mini batch 별로 평균과 분산을 이용해 정규화
+class VGGBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, batch_norm):
+        super().__init__()
+        
+        modules = []
+        modules.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1))
+        if batch_norm:
+            modules.append(nn.BatchNorm2d(out_channels))
+        modules.append(nn.ReLU(inplace=True))
+    
+        self.block = nn.Sequential(*modules)
+    
+    def forward(self, x):
+        return self.block(x)
+
+
+
+
+class VGG19(nn.Module):
+    def __init__(self, output_dim, block, pool, batch_norm):
+        super().__init__()
+        
+        self.features = nn.Sequential(
+            block(3, 64, batch_norm),
+            block(64, 64, batch_norm),
+            pool(2, 2),
+            block(64, 128, batch_norm),
+            block(128, 128, batch_norm),
+            pool(2, 2),
+            block(128, 256, batch_norm),
+            block(256, 256, batch_norm),
+            block(256, 256, batch_norm),
+            block(256, 256, batch_norm),
+            pool(2, 2),
+            block(256, 512, batch_norm),
+            block(512, 512, batch_norm),
+            block(512, 512, batch_norm),
+            block(512, 512, batch_norm),
+            pool(2, 2),
+            block(512, 512, batch_norm),
+            block(512, 512, batch_norm),
+            block(512, 512, batch_norm),
+            block(512, 512, batch_norm),
+            pool(2, 2),
+        )
+        
+        self.classifier = nn.Linear(512, output_dim)
+
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.shape[0], -1)   1차원 Flatten()
+        x = self.classifier(x)
+        return x
+
+    (0): VGGBlock(
+      (block): Sequential(
+        (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+      )
+    )
+
+
+def train(model, iterator, optimizer, criterion, device):
+    
+    epoch_loss = 0
+    epoch_acc = 0
+    
+    model.train() 학습모드
+		model.eval() 추론모드
+    
+    for (x, y) in iterator:
+			제너레이터
+        
+        x = x.to(device)
+        y = y.to(device)
+        
+        optimizer.zero_grad() 경사초기화
+                
+        fx = model(x)
+        
+        loss = criterion(fx, y) 손실계산
+        
+        acc = calculate_accuracy(fx, y) 정확도
+        
+        loss.backward() 역전파계산
+        
+        optimizer.step() 파라미터 수정
+        
+        epoch_loss += loss.item()
+        epoch_acc += acc.item()
+        
+    return epoch_loss / len(iterator), epoch_acc / len(iterator)
+
+
+
+    model.eval() 추론모드
+     
+    w ith torch.no_grad(): 미분x
+
+
+
+model.load_state_dict(torch.load('vgg-model.pt'))
+				 파라미터
+test_loss, test_acc = evaluate(model, test_iterator, criterion, device)
+print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
+
+
+
+	pip install tensorflow_datasets 
+	pip install protobuf==3.20
+
+
+
+
+
+InternalError: Failed copying input tensor from /job:localhost/replica:0/task:0/device:CPU:0 to /job:localhost/replica:0/task:0/device:GPU:0 in order to run _EagerConst: Dst tensor is not initialized.
+
+
+
+
+# pip install protobuf==3.20
+import tensorflow_datasets as tfds
+import tensorflow as tf
+tfds.disable_progress_bar()
+train_ds, validation_ds, test_ds = tfds.load(
+    "cats_vs_dogs",
+    # 0~10% 구간 train, 10~20% 구간 val, 20~30% 구간 test
+    split=["train[:10%]", "train[10%:20%]", "train[20%:30%]"],
+		train		val		test
+
+    as_supervised=True,  # lable 포함(지도학습)
+)
+tf.data.experimental.cardinality(train_ds), tf.data.experimental.cardinality(validation_ds), tf.data.experimental.cardinality(test_ds)
+
+
+
+
+size = (150, 150)
+train_ds = train_ds.map(lambda x, y: (tf.image.resize(x, size), y))
+			lambda  input : output
+	데이터셋.map(함수)
+
+validation_ds = validation_ds.map(lambda x, y: (tf.image.resize(x, size), y))
+test_ds = test_ds.map(lambda x, y: (tf.image.resize(x, size), y))
+
+
+
+
+
+batch_size = 1
+train_ds = train_ds.take(600).batch(batch_size)
+validation_ds = validation_ds.take(200).batch(batch_size)
+test_ds = test_ds.take(200).batch(batch_size)
+
+
+
+from tensorflow import keras
+from tensorflow.keras.layers import RandomFlip, RandomRotation, Dense
+from tensorflow.keras import Sequential, Input
+data_augmentation = Sequential(
+    [RandomFlip("horizontal"), RandomRotation(0.1),]
+)
+
+
+base_model = tf.keras.applications.vgg19.VGG19(
+    weights="imagenet",  # Load weights pre-trained on ImageNet.
+    input_shape=(150, 150, 3),
+    include_top=False, # output layer 제거
+)
+base_model.trainable = False #레이어 동결
+inputs = keras.Input(shape=(150, 150, 3))
+x = data_augmentation(inputs)  
+scale_layer = keras.layers.Rescaling(scale=1 / 127.5, offset=-1)
+x = scale_layer(x)
+x = base_model(x, training=False) # 사전훈련 모델
+x = keras.layers.GlobalAveragePooling2D()(x)
+x = keras.layers.Dropout(0.2)(x)  
+outputs = keras.layers.Dense(1)(x)
+model1 = keras.Model(inputs, outputs)
+model1.compile(
+    optimizer=keras.optimizers.Adam(1e-5),  # Low learning rate
+    loss=keras.losses.BinaryCrossentropy(from_logits=True),
+    metrics=[keras.metrics.BinaryAccuracy()],
+)
+model1.summary()
+# Total params: 20,024,897
+# Trainable params: 513
+# Non-trainable params: 20,024,384 (기본모델의 레이어가 동결된 상태)
+
+
+
+# fine tuning
+base_model.trainable = True #레이어 동결 해제
+		학습
+			False 추론모드
+model2 = keras.Model(inputs, outputs)
+model2.summary()
+model2.compile(
+    optimizer=keras.optimizers.Adam(1e-5),  # Low learning rate
+    loss=keras.losses.BinaryCrossentropy(from_logits=True),
+    metrics=[keras.metrics.BinaryAccuracy()],
+)
+
+
+model = models.resnet18(pretrained=True).to(device)
+
+
+
+train_transforms = transforms.Compose([
+                           transforms.RandomHorizontalFlip(),
+                           transforms.RandomRotation(10),
+                           transforms.RandomCrop((224, 224), pad_if_needed=True),
+                           transforms.ToTensor(),
+                           # color channel 정규화 범위 지정
+                           transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225))
+                       ])
+test_transforms = transforms.Compose([
+                           transforms.CenterCrop((224, 224)),
+                           transforms.ToTensor(),
+                           transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225))
+                       ])
+
+
+for param in model.parameters():
+    param.requires_grad = False # 레이어 동결
+
+# 이진분류이므로 out_features 2로 수정
+model.fc = nn.Linear(in_features=512, out_features=2).to(device)
+model.fc
+
+
+
+
+arr = torch.rand(2, 3, 4)  #3차원
+print(arr)
+pred = arr.argmax(2, keepdim = False) #출력 결과를 2차원으로 출력
+print(pred)
+print(pred.shape) #출력값의 차원이 감소함(3차원=>2차원)
+
+tensor([[[0.5727, 0.8372, 0.8338, 0.1401],
+         [0.4666, 0.8362, 0.0076, 0.6476],
+         [0.6934, 0.7426, 0.6040, 0.6015]],
+
+        [[0.5096, 0.0717, 0.9855, 0.9683],
+         [0.1882, 0.5910, 0.6901, 0.1232],
+         [0.0580, 0.5096, 0.9105, 0.3684]]])
+tensor([[1, 1, 1],
+        [2, 2, 2]])
+torch.Size([2, 3])
+
+
+        torch.save(model.state_dict(), 'dog-cat.pt')
+			가중치		파일
+
+
+
+
+torch.save(model.state_dict(), '가중치파일이름')
+model.load_state_dict(torch.load('가중치파일이름'))
+
+torch.save(model.state_dict(), 'test.pt')
+model.load_state_dict(torch.load('test.pt'))
+#############################
+torch.save(model, "모델파일이름")
+model = torch.load("모델파일이름")
+
+torch.save(model, "test.h5")
+model = torch.load("test.h5")
+
+
+
+
+
+
+
+
+
+# pip install protobuf==3.20
+import cv2
+import numpy as np
+from tensorflow.keras.applications.resnet50 import ResNet50,preprocess_input,decode_predictions
+model=ResNet50(weights='imagenet')
+#img=cv2.imread('d:/images/ball.png')
+#img=cv2.imread('d:/images/apple.jpg')
+img=cv2.imread('d:/images/plane.jpg')
+x=np.reshape(cv2.resize(img,(224,224)),(1,224,224,3))  
+x=preprocess_input(x)
+preds=model.predict(x)
+top5=decode_predictions(preds,top=5)[0]
+print('예측 결과:',top5)
+
+
+
+
+
+
+
+
+
+
+
+
+

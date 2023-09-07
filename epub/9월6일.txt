@@ -1,0 +1,634 @@
+Django
+	폼데이터 처리
+
+OpenCV(컴퓨터비전)	
+
+이미지 분석
+
+
+
+
+
+14:30 ~ 15:30 : IT 실무자 멘토링(코코넛사일로(주) 권성일 CTO)
+
+
+
+from django.contrib import admin
+from django.urls import path
+from mytest.views import ch01
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path('', ch01.home),
+    path('hello/', ch01.hello),
+
+def hello(request):
+    msg = 'hello django'
+    return render(request, 'ch01/hello.html', {'msg': msg})
+
+{{msg}}
+<br>
+<a href="#" onclick="history.back()">Back</a>
+	null link
+<a href="/">Home</a>
+
+
+    path('now/', ch01.now),
+    path('array/', ch01.array),
+]
+
+
+
+http://127.0.0.1:8000/hello/
+
+
+
+def now(request):
+    date = datetime.datetime.now()
+    # today = date
+    # today = f'{date.year}-{date.month}-{date.day} {date.hour}:{date.minute}:{date.second}'
+    # zfill(zero fill) 자리수에 맞추어 0으로 채움
+    today = f'{date.year}-{str(date.month).zfill(2)}-{str(date.day).zfill(2)} {str(date.hour).zfill(2)}:{str(date.minute).zfill(2)}:{str(date.second).zfill(2)}'
+    return render(request, "ch01/now.html", {"today": today})
+
+	str(date.month).zfill(2)
+	스트링으로        zero fill 2개
+
+
+def array(request):
+    items = ["apple", "peach", "grapes", "orange"]
+    return render(request, "ch01/array.html", {"items": items})
+
+
+
+<ul>				unordered list 번호없는 리스트
+{% for item in items %}
+	개별	배열
+    <li>{{item}}</li>
+{% endfor %}
+</ul>
+
+
+
+
+
+
+from django.shortcuts import render, redirect
+from mytest.models import Salary
+
+
+
+
+
+
+
+from django.db import models
+
+
+class Salary(models.Model):
+    name = models.CharField(max_length=50, blank=True, null=True)
+    sal = models.IntegerField()
+    bonus = models.IntegerField()
+    total = models.IntegerField()
+    tax = models.IntegerField()
+    money = models.IntegerField()
+
+
+
+
+
+<script>
+function check(){
+    let name=document.getElementById("name");
+    변수      현재문서    id로 태그 조회   id가 name
+    let year=document.getElementById("year");
+    if(name.value==""){
+        alert("이름을 입력하세요.");
+        name.focus();
+        return;
+    }
+    if(year.value==""){
+        alert("연도를 입력하세요.");
+        year.focus();
+        return;
+    }
+    document.form1.submit();
+}
+</script>
+
+
+<form name="form1" method="post">
+
+
+
+
+def age(request):
+    try:
+        name = request.POST['name']
+        year = request.POST['year']
+    except:
+        return render(request, 'ch02/age.html')
+    age = 2023 - int(year)
+    return render(request, 'ch02/age_result.html',
+                  {'name': name, 'year': year, 'age': age})
+
+
+
+
+
+def mysum(request):
+    try:
+        num = int(request.POST['num'])
+    except:
+        return render(request, 'ch02/mysum.html')
+    result = sum(range(1, num + 1))
+    sum1 = 0
+    sum2 = 0
+    for i in range(1, num + 1):
+        if i % 2 == 0:
+            sum1 += i
+        else:
+            sum2 += i
+    return render(request, 'ch02/mysum_result.html',
+                  {'num': num, 'result': result, 'sum1': sum1, 'sum2': sum2})
+
+
+import cv2
+		open cv
+	pip install opencv-python
+
+import numpy as np
+img = np.full((500,500,3), 255, dtype=np.uint8)
+	       w   h   ch  		1바이트 정수
+
+	0 ~ 255
+	b   w
+
+cv2.imwrite('d:/images/blank_500.jpg', img)
+	이미지저장
+
+
+
+import cv2
+img = cv2.imread('d:/images/pistol.jpg')
+         cv    matplotlib
+	BGR => RGB
+
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+gray = cv2.resize(gray, (16,16))
+# 픽셀의 평균값
+avg = gray.mean()
+# 평균값을 기준으로 0과 1로 변환
+bin = 1 * (gray > avg)
+print(bin)
+# 2진수 문자열을 16진수 문자열로 변환
+dhash = []
+for row in bin.tolist():
+    s = ''.join([str(i) for i in row])
+    dhash.append('%02x'%(int(s,2)))
+
+		x 16진수
+    
+dhash = ''.join(dhash)
+print(dhash)
+cv2.namedWindow('pistol', cv2.WINDOW_GUI_NORMAL)
+cv2.imshow('pistol', img)
+cv2.waitKey(0)
+
+
+
+
+
+
+
+
+import cv2
+import matplotlib.pyplot as plt
+img = cv2.imread("d:/images/rear_garden.PNG")
+print(img.shape) # height, width, channel
+	opencv
+	(496, 819, 3)
+	H     W    C
+
+
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+plt.imshow(img)
+
+
+
+
+# ROI(Region Of Interest)
+ROI = img[50:100, 50:100]
+plt.imshow(ROI)
+
+
+
+# 이미지 내에서 특정한 범위만 지정하여 색상을 변경
+img[50:100, 50:100] = (0, 0, 255)
+plt.imshow(img)
+
+
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+img = cv2.imread("d:/images/rear_garden.PNG")
+print(img.shape)
+
+ 0    1    2
+(496, 819, 3)
+height width channel
+
+(height, width) = img.shape[:2]
+
+center = (width // 2, height // 2)
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+plt.imshow(img)
+
+
+
+# 이미지의 채널 분할
+(Blue, Green, Red) = cv2.split(img)
+zeros = np.zeros(img.shape[:2], dtype = "uint8")
+# red
+img = cv2.cvtColor(cv2.merge([zeros, zeros, Red]), cv2.COLOR_BGR2RGB)
+				B    G       R
+plt.imshow(img)
+
+
+
+
+# 분할된 3채널 합치기
+BGR = cv2.merge([Blue, Green, Red])
+plt.imshow(BGR)
+
+
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+plt.imshow(gray,cmap='gray')
+
+
+
+# 선그리기
+# 시작점, 끝점, 색상, 선굵기
+cv2.line(img, (350, 100), (500, 100), (255, 0, 0), 5)  
+               x     y
+plt.imshow(img)
+
+
+cv2.rectangle(img, (150, 50), (200, 100), (0, 255, 0), 5)  
+plt.imshow(img)
+
+
+
+
+
+import numpy as np
+from PIL import ImageFont, ImageDraw, Image
+base_img = Image.fromarray(img).convert('RGBA')
+					Alpha 투명도 0.0 투명 ~ 1.0 불투명
+# blank 이미지
+txt_img = Image.new('RGBA', base_img.size, (255,255,255,0))
+fontpath = "c:/windows/fonts/malgun.ttf"    
+font = ImageFont.truetype(fontpath, 70)  # 폰트 설정
+draw = ImageDraw.Draw(txt_img)  
+draw.text((200, 250), "안녕하세요", font=font, fill=(255,255,255,128)) # alpha 반투명
+draw.text((200, 350), "안녕하세요", font=font, fill=(255,255,255,255)) # alpha 불투명
+# 이미지 결합
+comp_img = Image.alpha_composite(base_img,txt_img)  
+img = np.array(comp_img)
+plt.imshow(img)
+
+
+
+cv2.destroyAllWindows()
+
+
+
+
+
+
+import numpy as np
+plt.figure(figsize=(20,5))
+gamma = np.arange(0.1, 2.0, 0.2)
+for i, g in enumerate(gamma):
+    plt.subplot(2, 5, i+1)
+    out = image_rgb.copy()
+    out = image_rgb.astype(np.float64)
+    out = ((out / 255) ** (1 / g)) * 255
+    out = out.astype(np.uint8)
+    plt.title(f'gamma:{g:.1f}')
+    plt.imshow(out)
+    plt.axis("off")
+
+plt.show()
+
+
+
+
+
+import cv2
+import numpy as np
+one = cv2.imread("d:/images/one.jpg")
+two = cv2.imread("d:/images/two.jpg")
+three = cv2.imread("d:/images/three.jpg")
+four = cv2.imread("d:/images/four.jpg")
+horizontal1 = np.full((50, one.shape[1], 3), [0, 0, 0], dtype=np.uint8)
+#print(horizontal1)
+horizontal2 = np.full((50, two.shape[1], 3), (0, 0, 0), dtype=np.uint8)
+left = cv2.vconcat((one, horizontal1, three))
+	세로
+right = np.vstack((two, horizontal2, four))
+vertical = np.full((left.shape[0], 50, 3), 0, dtype=np.uint8)
+dst = cv2.hconcat((left, vertical, right))
+	가로
+cv2.imshow("dst", dst)
+cv2.waitKey()
+cv2.destroyAllWindows()
+
+
+
+np.full((2,3),10) # 2행 3열, 모든 값을 10으로 초기화
+
+#색상 반전: 어두운 부분은 밝게, 밝은 부분은 어둡게
+# 255 - 픽셀값
+# 200 => 255 - 200 = 55
+
+
+
+
+out = img.copy()
+print(out[0][0:5])
+out = 255 - out		white=>black
+print(out[0][0:5])
+plt.imshow(out)
+plt.axis("off")
+plt.show()
+
+
+
+
+import tensorflow as tf
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+x_train = x_train / 255
+x_test = x_test / 255
+
+
+
+
+model = tf.keras.applications.MobileNet(input_shape=(32, 32, 3), include_top=False, weights='imagenet')
+model.trainable = False
+	훈련x
+t_model = tf.keras.models.Sequential([
+    model, =>tf.keras.applications.MobileNet
+    tf.keras.layers.GlobalAveragePooling2D(),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+t_model.summary()
+t_model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.001),
+                loss='sparse_categorical_crossentropy',
+			one hot x => sparse
+			one hot o => categorical...
+                metrics='accuracy')
+
+
+
+from keras import backend as K
+import gc
+K.clear_session()
+gc.collect()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Total params: 3,361,354
+Trainable params: 132,490
+Non-trainable params: 3,228,864
+
+
+
+	전이학습
+
+
+# Fine-Tuning
+t_model.trainable = True
+t_model.summary()
+t_model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.0001),
+                loss='sparse_categorical_crossentropy',
+                metrics='accuracy')
+
+
+import matplotlib.pylab as plt
+import numpy as np
+import tensorflow as tf
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
+IMG_CHANNELS = 3
+CLASS_NAMES = ['daisy', 'dandelion', 'roses', 'sunflowers', 'tulips']
+CLASS_NAMES
+
+
+
+import tensorflow_hub as hub
+import os
+os.environ['TFHUB_MODEL_LOAD_FORMAT'] = 'COMPRESSED' #압축된 모형
+def read_and_decode(filename, reshape_dims):
+  img = tf.io.read_file(filename)
+  img = tf.image.decode_jpeg(img, channels=IMG_CHANNELS)
+  img = tf.image.convert_image_dtype(img, tf.float32)
+  return tf.image.resize(img, reshape_dims)
+def decode_csv(csv_row):
+  record_defaults = ["path", "flower"]
+  filename, label_string = tf.io.decode_csv(csv_row, record_defaults)
+  img = read_and_decode(filename, [IMG_HEIGHT, IMG_WIDTH])
+  label = tf.argmax(tf.math.equal(CLASS_NAMES, label_string))
+  return img, label
+batch_size = 32
+lrate = 0.001
+l1 = 0.
+l2 = 0.
+num_hidden = 16
+  
+regularizer = tf.keras.regularizers.l1_l2(l1, l2)
+train_dataset = (tf.data.TextLineDataset("d:/data/flowers/train_set.csv").map(decode_csv)).take(100).batch(batch_size)
+eval_dataset = (tf.data.TextLineDataset("d:/data/flowers/eval_set.csv").map(decode_csv)).take(20).batch(batch_size)
+
+	데이터셋.map(함수)
+		.take(샘플수)
+
+
+layers = [
+    hub.KerasLayer(
+        "https://tfhub.dev/google/tf2-preview/mobilenet_v2/feature_vector/4",
+        input_shape=(IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS),
+        trainable=False),
+    tf.keras.layers.Dense(num_hidden,
+                        kernel_regularizer=regularizer,
+                        activation='relu'),
+    tf.keras.layers.Dense(len(CLASS_NAMES),
+                        kernel_regularizer=regularizer,
+                        activation='softmax')
+]
+model = tf.keras.Sequential(layers)
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lrate),
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            metrics=['accuracy'])
+model.summary()
+
+
+X_train=X_train[::200]
+		start:stop:step
+X_valid=X_valid[::200]
+y_train=y_train[::200]
+y_valid=y_valid[::200]
+
+
+
+
+
+batch_size = 1
+datagen = ImageDataGenerator(rotation_range=15, width_shift_range=0.2, zoom_range=0.2, horizontal_flip=True)
+train_generator = datagen.flow(X_train, y_train, batch_size=batch_size)
+
+
+# ViT 모델
+# 1. 전이학습
+input_shape = (32, 32, 3) #cifar10 image size
+image_size = 256 # resize 256x256
+num_classes = 10
+def build_model():
+    inputs = Input(shape=input_shape)
+    # resize image
+    x = tf.keras.layers.Lambda(lambda image: tf.image.resize(image, (image_size, image_size)))(inputs)
+
+			lambda input : output
+
+    # vit 모델
+    base_model = vit.vit_b16(image_size=image_size, activation="sigmoid", pretrained=True, include_top=False, pretrained_top=False)    
+    # 추론모드로 설정(전이학습)
+    base_model.trainable = False
+    x = base_model(x)
+    x = Flatten()(x)
+    x = BatchNormalization()(x)
+    x = Dense(32, activation=tfa.activations.gelu)(x)
+    x = BatchNormalization()(x)
+    outputs = Dense(num_classes, activation="softmax")(x)
+    model_final = Model(inputs=inputs, outputs=outputs)
+    return model_final
+
+
+
+Total params: 85,872,874
+Trainable params: 26,538
+Non-trainable params: 85,846,336
+
+
+
+
+model.fit(train_generator,
+          epochs=2,
+          validation_data=(X_valid, y_valid),
+         )
+gc.collect()
+
+
+
+#2. fine tuning
+plateau = ReduceLROnPlateau(monitor="val_loss", factor=0.7, patience=1, verbose=1)
+					평가기준                   횟수
+earlystopping = EarlyStopping(monitor="val_loss", patience=3, verbose=1)
+#훈련모드로 변경
+for layer in model.layers:
+    layer.trainable = True
+    
+model.compile(optimizer=optimizers.SGD(learning_rate=0.001), loss="categorical_crossentropy", metrics=["accuracy"])
+model.summary()
+
+
+
+
+import glob
+glob.glob('d:\\data\\foods\\**\\*.jpg', recursive=True)
+                           ** 모든 하위디렉토리
+
+d:\\data\\foods\\Test\\Chicken\\chicken_11.jpg
+0    1    2        3    4           5
+
+
+
+import glob
+from PIL import Image
+import glob
+all_images=[]
+all_labels=[]
+img_size=(96,96)
+for f in glob.glob('d:\\data\\foods\\**\\*.jpg', recursive=True):
+    arr=f.split('\\')
+    print(arr)
+    img = Image.open(f)
+    img_resize = img.resize((img_size[0], img_size[1]))
+    all_images.append(img_resize)
+    label=0
+    print(arr)
+    if arr[4]=='Chicken':
+        label=0
+    elif arr[4]=='Dolsot':
+        label=1
+    elif arr[4]=='Jeyug':
+        label=2
+    elif arr[4]=='Kimchi':
+        label=3
+    elif arr[4]=='Samgyeob':
+        label=4
+    elif arr[4]=='Soybean':                                        
+        label=5
+    print(label)
+    all_labels.append(label)
+
+
+import numpy as np
+X=np.empty((1,img_size[0],img_size[1],3))
+		 96          96        컬러
+for img in all_images:
+    X=np.vstack((X,np.array(img).reshape(1,img_size[0],img_size[1],3)))
+X.shape   
+
+
+
+
+
+from keras.callbacks import ModelCheckpoint
+checkpoint = ModelCheckpoint("d:/data/models/food_best.h5", monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+hist = model.fit(X_train, y_train, batch_size=32, validation_split=0.2, epochs=50, callbacks=[checkpoint])
+
+
+[[2.91636020e-01 3.75590357e-03 2.76394129e-01 3.53117108e-01
+  1.59100275e-02 5.91867268e-02]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
