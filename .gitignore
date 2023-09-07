@@ -21,3 +21,9 @@
 #doc/**/*.pdf
 
 DATA/
+
+*.pt
+
+.data
+
+SRC/.data
