@@ -1,0 +1,938 @@
+Django
+	회원관리(Django 내장기능)
+	게시판
+	React
+	CentOS 배포
+	Ubuntu 배포
+
+OpenCV(컴퓨터비전)	
+
+이미지 분석
+	생성모델
+
+강화학습
+
+9/18(월)부터 3차 프로젝트 시작
+10/13(금) 3차 프로젝트 발표회(예정), 업체 참관/현장 면접
+10/17(화) 수료
+10/24(화) 종강
+
+
+
+
+
+
+
+
+from django import forms
+from django.contrib.auth.models import User
+
+
+class UserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["username", "email", "password"]
+		  아이디			비번
+
+
+class LoginForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["username", "password"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+last_login : Sept. 13, 2023, 12:36 a.m.
+username : admin
+password : pbkdf2_sha256$600000$GALfTK8XPbjjJv8RG94frR$t/fcG1Wjt2GB8zdPjcNoumyaFfZkTg/KFAKZ+a40dYc=
+is_authenticated : True
+
+
+{% if data.is_authenticated %}
+		인증여부
+    <h2>회원 로그인 관련 정보</h2>
+    <ul>
+        {% for key,value in data.items %}
+            <li>{{key}} : {{value}}</li>
+        {% endfor %}
+    </ul>
+    <a href="/member/logout">로그아웃</a>
+{% else %}
+    <h2>로그인하세요.</h2>
+   로그인 상태 : {{data.is_authenticated}}<br>
+   사용자 아이디 : {{data.username}}<br>
+    <span style="color:red;">{{msg}}</span><br>
+    <a href="/member/login">로그인</a>
+    <a href="/member/join">회원가입</a>
+{% endif %}
+
+
+
+
+
+<form method="post">
+    {% csrf_token %}
+    <table>
+       {{form.as_table}}
+    </table>
+    <input type="submit" value="회원가입">
+</form>
+
+
+
+
+
+def join(request):
+    if request.method == "POST":
+		 폼데이터 제출
+        form = UserForm(request.POST)
+			입력값
+        # 입력값에 문제가 없으면(모든 유효성 검증 규칙을 통과할 때)
+        if form.is_valid():
+            # form.cleaned_data(검증에 성공한 값들을 딕셔너리 타입으로 저장하고 있는 데이터)
+            # ** keyword argument, 키워드 인자
+            # 새로운 사용자가 생성됨
+            new_user = User.objects.create_user(**form.cleaned_data)
+            # 로그인 처리
+            dlogin(request, new_user)
+            # 시작 페이지로 이동
+            return redirect("/member")
+        else:
+            return render(request, "member/index.html",
+                          {"msg": "회원가입 실패... 다시 시도해 보세요."})
+    else:
+        # post 방식이 아닌 경우 회원가입페이지로 이동
+        form = UserForm()
+        return render(request, "member/join.html", {"form": form})
+
+
+
+<table>
+    <tr>
+        <td>아이디</td>
+        <td>
+            <input id="{{ form.username.id_for_label }}" maxlength="15"
+                   name="{{ form.username.html_name }}">
+        </td>
+    </tr>
+    <tr>
+        <td>비밀번호</td>
+        <td>
+            <input id="{{ form.password.id_for_label }}" maxlength="120"
+                   name="{{ form.password.html_name }}" type="password">
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="center">
+            <input type="submit" value="로그인">
+            <input type="button" value="회원관리 메인"
+                onclick="location.href='/member/'">
+        </td>
+    </tr>
+</table>
+
+
+def login_check(request):
+    if request.method == "POST":
+        name = request.POST["username"]
+        pwd = request.POST["password"]
+        # 인증
+        user = authenticate(username=name, password=pwd)
+        if user is not None:  # 로그인 성공
+            dlogin(request, user)
+            # session에 저장
+            request.session["userid"] = name
+            return redirect("/member")
+        else:  # 로그인 실패
+            return render(request, "member/index.html",
+                          {"msg": "로그인 실패... 다시 시도해 보세요."})
+    else:  # get 방식인 경우 - 로그인 페이지로 이동
+        form = LoginForm()
+        return render(request, "member/login.html", {"form": form})
+
+
+# *변수
+#여러개의 매개변수를 하나의 튜플로 저장함
+def test(*a):
+    print(a)
+    
+test('hello')    
+test('hello','good')    
+test('hello','good','morning')   
+
+
+test() takes 1 positional argument but 2 were given
+
+
+
+
+
+# **변수
+# 여러개의 key와 value들을 하나의 딕셔너리로 저장함
+def test(**a):
+    print(a)
+   
+test(name='김철수')    {'name':'김철수'}
+test(name='김철수',age=20)    {'name':'김철수','age':20}
+test(name='김철수',age=20,height=180)    
+
+
+
+
+import numpy as np
+import cv2
+img1 = cv2.imread("d:/images/winter.jpg", cv2.IMREAD_GRAYSCALE)
+img1 = cv2.resize(img1, (320, 240))
+# 투시 변환 수행
+h, w = img1.shape
+point1_src = np.float32([[1,1], [w-10,10], [5,h-5], [w-4,h-4]])
+point1_dst = np.float32([[15,15], [w-60,15], [10,h-25], [w-100,h-50]])
+point2_src = np.float32([[148,145], [168,144], [136,223], [188,222]])
+point2_dst = np.float32([[136,145], [188,144], [136,223], [188,222]])
+#원근 변환
+per_mat1 = cv2.getPerspectiveTransform(point1_src, point1_dst)
+per_mat2 = cv2.getPerspectiveTransform(point2_src, point2_dst)
+res1 = cv2.warpPerspective(img1, per_mat1, (w,h))
+res2 = cv2.warpPerspective(img1, per_mat2, (w,h))
+displays = [("input1", img1),
+            ("res1", res1),
+            ("res2", res2)]
+for (name, out) in displays:
+    cv2.imshow(name, out)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+(384, 640, 3)
+H     W    C
+                    W         H
+dst1 = image_rgb[100:500, 200:600].copy()
+		  행       열
+
+dst2 = image_rgb.copy()
+	원본
+roi = image_rgb[100:300, 200:600]
+	ROI(Region Of Interest)
+# roi(Region of Interest)
+dst2[0:200, 0:400] = roi
+
+
+
+
+import cv2
+import numpy as np
+#마우스 드래그 상태
+isDragging = False
+# roi 좌표                    
+x0, y0, w, h = -1,-1,-1,-1
+blue, red = (255,0,0),(0,0,255)
+
+def onMouse(event,x,y,flags,param):    
+    global isDragging, x0, y0, img    
+    if event == cv2.EVENT_LBUTTONDOWN:  
+        isDragging = True #드래그 시작
+        x0 = x
+        y0 = y
+    elif event == cv2.EVENT_MOUSEMOVE:  
+        if isDragging:                
+            #이미지 복사
+            img_draw = img.copy()      
+            #드래그 영역 출력
+            cv2.rectangle(img_draw, (x0, y0), (x, y), blue, 2)
+            cv2.imshow('img', img_draw)
+    elif event == cv2.EVENT_LBUTTONUP:  
+        if isDragging:            
+            #드래그 중지      
+            isDragging = False        
+            # drag width  
+            w = x - x0                
+            # drag height
+            h = y - y0                
+            print("x:%d, y:%d, w:%d, h:%d" % (x0, y0, w, h))
+            if w > 0 and h > 0:        
+                img_draw = img.copy()  
+                # roi에 사각형
+                cv2.rectangle(img_draw, (x0, y0), (x, y), red, 2)
+                cv2.imshow('img', img_draw)
+                roi = img[y0:y0+h, x0:x0+w]
+                # ROI 지정 영역을 새창으로 표시
+                cv2.imshow('cropped', roi)  
+                # 새 창 좌표 이동
+                cv2.moveWindow('cropped', 1200, 0)
+                cv2.imwrite('./cropped.jpg', roi)
+            else:
+                cv2.imshow('img', img)  
+
+img = cv2.imread('d:/images/sunset.jpg')
+cv2.imshow('img', img)
+cv2.setMouseCallback('img', onMouse) # 마우스 이벤트 등록
+		    객체     함수
+cv2.waitKey()
+cv2.destroyAllWindows()
+
+
+
+
+#alpha-trimmed mean filtering(알파-절삭 평균값 필터링)
+#가중치(알파)를 두어 일부를 자르고(절삭) 그 값들의 평균값을 취하는 방식
+#픽셀값을 크기순으로 정렬, 알파값에 따라 양쪽의 픽셀을 자르고 나머지 값들의 평균값으로 처리
+############################
+import cv2
+import numpy as np
+img = cv2.imread("d:/images/penguin.png")
+
+
+	0 1 2 3 ..... 255
+
+
+
+
+
+height, width, channel = img.shape
+# salt and pepper noise를 만드는 코드
+# 이미지에 희고(salt - 소금) 검은(pepper - 후추) 노이즈
+alpha=0.3
+noise = img.copy()
+salt = int(height * width * 0.1)
+for i in range(salt):
+    row = int(np.random.randint(99999, size=1) % height)
+    col = int(np.random.randint(99999, size=1) % width)
+    ch = int(np.random.randint(99999, size=1) % channel)
+    noise[row][col][ch] = 255 if np.random.randint(99999, size=1) % 2 == 1 else 0
+#노이즈 제거
+out = np.zeros((height + 1, width + 1, channel), dtype=float) #제로 패딩
+out[1:1 + height, 1:1 + width] = noise.copy().astype(float)
+temp = out.copy()
+for i in range(height):
+    for j in range(width):
+        for k in range(channel):
+            mean = np.sort(np.ravel(temp[i:i + 3, j:j + 3, k]))
+            out[1 + i, 1 + j, k] = np.mean(mean[int(alpha * 9):-int(alpha * 9)])
+out = out[1:1 + height, 1:1 + width].astype(np.uint8)
+
+
+
+
+import tensorflow as tf
+gpus = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(gpus[0],True)
+
+
+
+width, height, channel = 32, 32, 1 # 이미지 사이즈 32*32 pixel
+X = data.values
+X = X.reshape((X.shape[0], width, height, channel))
+print(X.shape)
+
+# Normalization [0,255] -> [-1,1]
+X = (X - 127.5) / 127.5
+print(X[0][0][:5])
+
+
+
+
+# 학습용 데이터
+BATCH_SIZE = 64
+train_dataset = tf.data.Dataset.from_tensor_slices(X).shuffle(X.shape[0]).batch(BATCH_SIZE)
+print(train_dataset)
+
+
+
+# 생성 모형
+from tensorflow.keras.layers import Dense, BatchNormalization, LeakyReLU, Reshape, Conv2DTranspose
+from tensorflow.keras import Sequential
+def build_generator_model():
+    model = Sequential()
+    model.add(Dense(1024, input_dim=100))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU())
+    
+    model.add(Dense(8*8*128))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU())
+    
+    model.add(Reshape((8, 8, 128)))  
+    
+    model.add(Conv2DTranspose(128, (5, 5), strides=(1, 1), padding='same'))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU())
+    
+    model.add(Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same'))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU())
+    
+    model.add(Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', activation='tanh'))
+    assert model.output_shape == (None, 32, 32, 1)
+    return model
+
+
+
+	input			output
+	100			32x32
+
+
+
+
+# 학습되지 않은 생성 모델이 만든 이미지
+import os    
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+noise = tf.random.normal([1, 100])
+generated_image = generator(noise, training=False)
+plt.imshow(generated_image[0, :, :, 0], cmap='gray')
+
+
+# 판별 모형
+from tensorflow.keras.layers import Conv2D, Dropout, Flatten
+def build_discriminator_model():
+    model = Sequential()
+    
+    model.add(Conv2D(64, (5, 5), strides=2, padding='same', input_shape=[32, 32, 1]))
+    model.add(LeakyReLU(0.2))
+    model.add(Dropout(0.3))
+    model.add(Conv2D(128, (5, 5), strides=2, padding='same'))
+    model.add(LeakyReLU(0.2))
+    
+    model.add(Flatten())
+    
+    model.add(Dense(256))
+    model.add(LeakyReLU(0.2))
+    model.add(Dropout(0.3))
+    model.add(Dense(1))
+    
+    return model
+
+
+# 학습되지 않은 판별 모형의 결과
+predicted = discriminator(generated_image)
+				랜덤이미지
+print(predicted)
+
+tf.Tensor([[0.00042493]], shape=(1, 1), dtype=float32)
+	0.0 ~ 1.0
+	가짜   진짜
+
+
+
+# 생성 모델의 목표 : 판별 모델이 가짜 이미지를 판별했을 때 판별값이 1에 가까워지도록 하는 것
+def generator_loss(fake_output):
+    return cross_entropy(tf.ones_like(fake_output), fake_output) # 1과 fake 이미지 비교
+
+
+def train(dataset, epochs):
+  for epoch in range(epochs):
+  
+    for image_batch in dataset: # mini batch
+      train_step(image_batch)
+    print("%s epochs trained" % epoch)
+    show_generated_images(epoch)
+
+
+def train_step(images):
+    # 생성 모델 input noise
+    noise = tf.random.normal([BATCH_SIZE, noise_dim])
+		가짜이미지
+    # Gradient descent 계산 및 파라미터 업데이트
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape: #자동 미분
+        generated_images = generator(noise, training=True)
+				가짜이미지생성
+        # real image의 판별값
+        real_output = discriminator(images, training=True)
+				진짜이미지 훈련
+        # fake image의 판별값
+        fake_output = discriminator(generated_images, training=True)
+				가짜이미지 훈련
+
+        gen_loss = generator_loss(fake_output)
+        disc_loss = discriminator_loss(real_output, fake_output)
+
+
+    gradients_of_generator = gen_tape.gradient(gen_loss, generator.trainable_variables)
+    gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
+    generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.trainable_variables))
+    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+
+
+
+
+import tensorflow as tf
+generator = tf.keras.models.load_model('d:/data/models/korean_number.h5')
+generator.summary()
+
+
+
+
+
+noise_dim = 100
+num_examples_to_generate = 64
+seed = tf.random.normal([num_examples_to_generate, noise_dim])
+			가짜이미지 생성
+predictions = generator(seed, training=False)
+fig = plt.figure(figsize=(8,8))
+for i in range(predictions.shape[0]):
+    plt.subplot(8, 8, i+1)
+    plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+    plt.axis('off')
+
+
+
+
+
+#이미지 파일들을 h5py 파일로 압축하는 과정(오래걸림, 15~20분)
+import h5py
+import zipfile
+import imageio
+import os
+hdf5_file = 'd:/data/celeba/celeba_aligned_small.h5py'
+				이미지 => 압축
+total_images = 20000
+with h5py.File(hdf5_file, 'w') as hf:
+    count = 0
+    with zipfile.ZipFile('d:/data/celeba/img_align_celeba.zip', 'r') as zf:
+
+
+			  0  1     2           3             /  압축풀린파일들 4
+
+					 img_align_celeba/000001.jpg
+      for i in zf.namelist():
+
+        if (i[-4:] == '.jpg'):
+          # extract image
+          ofile = zf.extract(i)
+          img = imageio.v2.imread(ofile)
+          os.remove(ofile)
+          # 이미지 데이터를 h5py 모델에 추가하는 과정
+          hf.create_dataset('d:/data/celeba/img_align_celeba/'+str(count)+'.jpg', data=img, compression="gzip", compression_opts=9)
+          
+          count = count + 1
+          if count%1000 == 0:
+            print("images done .. ", count)
+          if count == total_images:
+            break
+
+	auto encoder
+
+	input	encoder		decoder		output
+		압축		복원
+
+		확률분포		
+
+
+# VAE(Variational AutoEncoder) 모델
+# Auto Encoder 개념을 활용한 생성 모델
+# 잠재 공간(z)에 확률 분포를 저장하여 평균과 분산 파라미터 생성
+# input image X를 잘 설명하는 feature를 추출하여 latent vector z에 담고 이 z를 통해 X와 유사하지만 완전히 새로운 데이터를 생성해 내는 것
+# encoder : input image의 중요한 특성(확률분포)을 추출하여 latent vector z에 저장
+# decoder : latent vector z를 입력하여 유사한 확률 분포의 새로운 이미지를 만들어내는 것
+# 예를 들어 한국인의 얼굴을 그리기 위해 눈, 코, 입 등의 feature를 Latent vector z에 담고, 그 z를 이용해 그럴듯한 한국인의 얼굴을 그려내는 것
+##################################
+
+
+
+zdim=32                           
+def sampling(args):
+    #평균, 로그분산
+    z_mean,z_log_var=args
+    # epsilon : 임의의 실수값
+    epsilon=K.random_normal(shape=(K.shape(z_mean)[0],zdim),mean=0.0,stddev=0.1)
+    return z_mean+K.exp(0.5*z_log_var)*epsilon
+
+
+
+
+
+
+encoder_input=Input(shape=(28,28,1))       
+			28x28 => 압축 32
+					확률분포
+ 
+x=Conv2D(32,(3,3),activation='relu',padding='same',strides=(1,1))(encoder_input)
+x=Conv2D(64,(3,3),activation='relu',padding='same',strides=(2,2))(x)
+x=Conv2D(64,(3,3),activation='relu',padding='same',strides=(2,2))(x)
+x=Conv2D(64,(3,3),activation='relu',padding='same',strides=(1,1))(x)
+x=Flatten()(x)
+z_mean=Dense(zdim)(x)
+z_log_var=Dense(zdim)(x)
+encoder_output=Lambda(sampling)([z_mean,z_log_var])
+		        입력          출력
+model_encoder=Model(encoder_input,[z_mean,z_log_var,encoder_output])
+model_encoder.summary()
+
+
+
+decoder_input=Input(shape=(zdim,))        
+			32 확률분포값
+x=Dense(3136)(decoder_input)
+x=Reshape((7,7,64))(x)
+x=Conv2DTranspose(64,(3,3),activation='relu',padding='same',strides=(1,1))(x)
+x=Conv2DTranspose(64,(3,3),activation='relu',padding='same',strides=(2,2))(x)
+x=Conv2DTranspose(32,(3,3),activation='relu',padding='same',strides=(2,2))(x)
+x=Conv2DTranspose(1,(3,3),activation='sigmoid',padding='same',strides=(1,1))(x)
+decoder_output=x
+model_decoder=Model(decoder_input,decoder_output)
+			28x28 이미지
+model_decoder.summary()
+
+
+
+
+
+
+
+
+# 랜덤으로 2개 샘플 선택
+i=np.random.randint(x_test.shape[0])
+j=np.random.randint(x_test.shape[0])
+x=np.array((x_test[i],x_test[j]))
+z=model_encoder.predict(x)[2] # encoder_output
+print(y_test[i],y_test[j])
+# 영배열
+zz=np.zeros((11,zdim))         # 11 x 32
+alpha=[0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+for i in range(11):
+    zz[i]=(1.0-alpha[i])*z[0]+alpha[i]*z[1] # z[0] z_mean , z[1] z_log_var
+gen=model_decoder.predict(zz)
+plt.figure(figsize=(20,4))
+for i in range(11):
+    plt.subplot(1,11,i+1)
+    plt.imshow(gen[i].reshape(28,28),cmap='gray')
+    plt.xticks([])
+    plt.yticks([])
+    plt.title(str(alpha[i]))
+
+
+
+import cv2
+import numpy as np
+def loadTrainData(image_path, label_path):
+    with open(image_path, "rb") as image_data:
+			read binary
+        # offset 시작위치
+        images = np.frombuffer(image_data.read(), dtype=np.uint8, offset=16)
+				바이트배열					skip
+        print(images.shape)
+    with open(label_path, "rb") as label_data:
+        labels = np.frombuffer(label_data.read(), dtype=np.uint8, offset=8)
+    return images.reshape(-1, 784), labels
+
+
+train_x, train_y = loadTrainData(
+    "d:/data/fashion-mnist/train-images-idx3-ubyte",
+    "d:/data/fashion-mnist/train-labels-idx1-ubyte"
+)
+test_x, test_y = loadTrainData(
+    "d:/data/fashion-mnist/t10k-images-idx3-ubyte",
+    "d:/data/fashion-mnist/t10k-labels-idx1-ubyte"
+)
+
+
+
+knn = cv2.ml.KNearest_create() #knn 모형
+				사례기반추론
+retval = knn.train(train_x.astype(np.float32), cv2.ml.ROW_SAMPLE, train_y.astype(np.int32))
+count = 500
+retval, results, neighborResponses, dist = knn.findNearest(
+    test_x[:count].astype(np.float32), k=7
+)
+matches = results.astype(np.uint8) == test_y[:count][:, None]
+print(np.count_nonzero(matches) / count * 100)
+
+
+
+
+#pip install opencv-contrib-python
+import cv2
+import numpy as np
+categories =  ['airplanes', 'Motorbikes' ]
+dict_file = 'd:/data/models/plane_bike_dict.npy'
+		
+svm_model_file = 'd:/data/models/plane_bike_svm.xml'
+imgs = ['d:/images/aircraft.jpg','d:/images/jetstar.jpg',
+        'd:/images/motorcycle.jpg', 'd:/images/motorbike.jpg']
+# 특징 추출기(SIFT) 생성
+detector = cv2.xfeatures2d.SIFT_create()
+# BOWImgDescriptorExtractor() : 자연어 처리의 Bow(Bag of Words) 알고리즘을 컴퓨터 비전 분야에 활용하여 특징 디스크립터를 추출하는 클래스
+bowextractor = cv2.BOWImgDescriptorExtractor(detector, \
+                                cv2.BFMatcher(cv2.NORM_L2))
+bowextractor.setVocabulary(np.load(dict_file))
+svm  = cv2.ml.SVM_load(svm_model_file)
+# 이미지 테스트
+for i, path in enumerate(imgs):
+    img = cv2.imread(path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # 테스트 이미지에서 BOW 히스토그램 추출
+    hist = bowextractor.compute(gray, detector.detect(gray))
+    # SVM 예측
+    ret, result = svm.predict(hist)
+    # 결과 표시
+    name = categories[int(result[0][0])]
+    txt, base = cv2.getTextSize(name, cv2.FONT_HERSHEY_PLAIN, 2, 3)
+    x,y = 10, 50
+    cv2.rectangle(img, (x,y-base-txt[1]), (x+txt[0], y+txt[1]), (30,30,30), -1)
+    cv2.putText(img, name, (x,y), cv2.FONT_HERSHEY_PLAIN, \
+                                 2, (0,255,0), 2, cv2.LINE_AA)
+    cv2.imshow(path, img)
+    
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+
+
+
+#kmeans를 이용한 색상 선택
+import numpy as np
+import cv2
+img1 = cv2.imread("d:/images/winter.jpg")
+img1 = cv2.resize(img1, (320, 240))
+cv2.imshow("input",img1)
+data = img1.reshape((-1,3))
+data = np.float32(data)
+# TERM_CRITERIA_EPS - 주어진 정확도에 도달하면 중지
+# TERM_CRITERIA_MAX_ITER - 주어진 횟수만큼 반복
+criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+attempts = 10
+# KMEANS_RANDOM_CENTERS - 중심 좌표를 랜덤으로 설정
+flags = cv2.KMEANS_RANDOM_CENTERS
+for i in range(1, 5):
+    numK = i * 5 #클러스터 수(클수록 다양한 색상 표현)
+    ret, label, center = cv2.kmeans(data, numK, None, criteria, attempts, flags)
+    # 결과 영상 출력
+    center = np.uint8(center)
+    res = center[label.flatten()]
+    res = res.reshape((img1.shape))
+    cv2.imshow('k='+str(numK),res)
+    cv2.waitKey(1)
+cv2.waitKey(0) # 키입력 무한대기
+cv2.destroyAllWindows()
+
+
+
+def build_model(hp):
+    inputs = keras.Input(shape=(28, 28, 1))
+    filters = hp.Int("filters_1", min_value=16, max_value=64, step=16)
+    x = keras.layers.Conv2D(filters, 3, activation="relu")(inputs)
+    x = keras.layers.MaxPooling2D(pool_size=2)(x)
+    filters = hp.Int("filters_2", min_value=32, max_value=128, step=16)
+    x = keras.layers.Conv2D(filters, 3, activation="relu")(x)
+    x = keras.layers.MaxPooling2D(pool_size=2)(x)
+    filters = hp.Int("filters_3", min_value=32, max_value=128, step=16)
+    x = keras.layers.Conv2D(filters, 3, activation="relu")(x)
+    x = keras.layers.MaxPooling2D(pool_size=2)(x)
+    x = keras.layers.Flatten()(x)
+    outputs = keras.layers.Dense(10, activation="softmax")(x)
+    model = keras.Model(inputs, outputs)
+    optimizer = hp.Choice("optimizer", values=["rmsprop", "adam"])
+    lr = hp.Float("lr", min_value=1e-3, max_value=1e-2, sampling="log")
+    if optimizer == "rmsprop":
+        opt = keras.optimizers.RMSprop(learning_rate=lr)
+    else:
+        opt = keras.optimizers.Adam(learning_rate=lr)
+    model.compile(opt, loss="sparse_categorical_crossentropy",
+                  metrics=["accuracy"])
+    return model
+
+
+
+Search space summary
+Default search space size: 5
+filters_1 (Int)
+{'default': None, 'conditions': [], 'min_value': 16, 'max_value': 64, 'step': 16, 'sampling': 'linear'}
+filters_2 (Int)
+{'default': None, 'conditions': [], 'min_value': 32, 'max_value': 128, 'step': 16, 'sampling': 'linear'}
+filters_3 (Int)
+{'default': None, 'conditions': [], 'min_value': 32, 'max_value': 128, 'step': 16, 'sampling': 'linear'}
+optimizer (Choice)
+{'default': 'rmsprop', 'conditions': [], 'values': ['rmsprop', 'adam'], 'ordered': False}
+lr (Float)
+{'default': 0.001, 'conditions': [], 'min_value': 0.001, 'max_value': 0.01, 'step': None, 'sampling': 'log'}
+
+{'filters_1': 32,
+ 'filters_2': 64,
+ 'filters_3': 112,
+ 'optimizer': 'rmsprop',
+ 'lr': 0.003293601121258744}
+
+
+
+
+
+(x_train, y_train), (x_test, y_test) = keras.datasets.fashion_mnist.load_data()
+x_train, x_val = x_train[:-10000], x_train[-10000:]
+y_train, y_val = y_train[:-10000], y_train[-10000:]
+
+
+def build_model(hp):
+    inputs = keras.Input(shape=(28, 28, 1))
+				28x28
+    filters = hp.Int("filters_1", min_value=16, max_value=64, step=16)
+					16~64, step 16
+    x = keras.layers.Conv2D(filters, 3, activation="relu")(inputs)
+    x = keras.layers.MaxPooling2D(pool_size=2)(x)
+    filters = hp.Int("filters_2", min_value=32, max_value=128, step=16)
+					32~128, step 16
+    x = keras.layers.Conv2D(filters, 3, activation="relu")(x)
+    x = keras.layers.MaxPooling2D(pool_size=2)(x)
+    filters = hp.Int("filters_3", min_value=32, max_value=128, step=16)
+    x = keras.layers.Conv2D(filters, 3, activation="relu")(x)
+    x = keras.layers.MaxPooling2D(pool_size=2)(x)
+    x = keras.layers.Flatten()(x)
+    outputs = keras.layers.Dense(10, activation="softmax")(x)
+    model = keras.Model(inputs, outputs)
+    optimizer = hp.Choice("optimizer", values=["rmsprop", "adam"])
+    lr = hp.Float("lr", min_value=1e-3, max_value=1e-2, sampling="log")
+    if optimizer == "rmsprop":
+        opt = keras.optimizers.RMSprop(learning_rate=lr)
+    else:
+        opt = keras.optimizers.Adam(learning_rate=lr)
+    model.compile(opt, loss="sparse_categorical_crossentropy",
+                  metrics=["accuracy"])
+    return model
+
+
+tuner = kt.RandomSearch(build_model, objective="val_accuracy", max_trials=30, seed=0)
+tuner.search_space_summary()
+
+
+
+#오래 걸림
+tuner.search(x_train[:1000], y_train[:1000], batch_size=32, epochs=10, validation_data=(x_val[:1000], y_val[:1000]))
+
+
+
+Trial 25 summary
+Hyperparameters:
+filters_1: 32
+filters_2: 64
+filters_3: 112
+optimizer: rmsprop
+lr: 0.003293601121258744
+Score: 0.7960000038146973
+
+
+
+
+{'filters_1': 32, 'filters_2': 64, 'filters_3': 112, 'optimizer': 'rmsprop', 'lr': 0.003293601121258744}
+{'filters_1': 64, 'filters_2': 80, 'filters_3': 96, 'optimizer': 'adam', 'lr': 0.0016389450820940895}
+{'filters_1': 32, 'filters_2': 80, 'filters_3': 96, 'optimizer': 'rmsprop', 'lr': 0.0028257096195835455}
+
+
+
+
+
+
+(x_train,y_train),(x_test,y_test)=ds.mnist.load_data()
+x_train=x_train.reshape(60000,28,28,1)
+x_test=x_test.reshape(10000,28,28,1)
+x_train=x_train.astype(np.float32)/255.0
+x_test=x_test.astype(np.float32)/255.0
+y_train=tf.keras.utils.to_categorical(y_train,10)
+y_test=tf.keras.utils.to_categorical(y_test,10)
+
+
+
+cnn=Sequential()
+cnn.add(Conv2D(32,(3,3),activation='relu',input_shape=(28,28,1)))
+cnn.add(Conv2D(32,(3,3),activation='relu'))
+cnn.add(MaxPooling2D(pool_size=(2,2)))
+cnn.add(Dropout(0.25))
+cnn.add(Conv2D(64,(3,3),activation='relu'))
+cnn.add(Conv2D(64,(3,3),activation='relu'))
+cnn.add(MaxPooling2D(pool_size=(2,2)))
+cnn.add(Dropout(0.25))
+cnn.add(Flatten()) 1차원으로
+cnn.add(Dense(units=512,activation='relu'))
+cnn.add(Dropout(0.5))
+cnn.add(Dense(units=10,activation='softmax'))
+cnn.compile(loss='categorical_crossentropy',optimizer=Adam(learning_rate=0.001),metrics=['accuracy'])
+cnn.summary()
+
+
+def reset():
+    global img
+	전역변수
+      
+    img=np.ones((200,520,3),dtype=np.uint8)*255
+    for i in range(5):
+        cv.rectangle(img,(10+i*100,50),(10+(i+1)*100,150),(0,0,255))
+    cv.putText(img,'e:erase s:show r:recognition q:quit',(10,40),cv.FONT_HERSHEY_SIMPLEX,0.8,(255,0,0),1)
+
+
+
+def grab_numerals():
+    numerals=[]
+    for i in range(5):
+        roi=img[51:149 , 11+i*100:9+(i+1)*100 , 0]
+		  행          열                 채널
+        roi=255-cv.resize(roi,(28,28),interpolation=cv.INTER_CUBIC)
+        numerals.append(roi)  
+    numerals=np.array(numerals)
+    return numerals
+
+
+
+def show():
+    numerals=grab_numerals()
+    plt.figure(figsize=(25,5))
+    for i in range(5):
+        plt.subplot(1,5,i+1)
+        plt.imshow(numerals[i],cmap='gray')
+        plt.xticks([])
+        plt.yticks([])
+    plt.show()
+
+
+def recognition():
+    numerals=grab_numerals()
+    numerals=numerals.reshape(5,28,28,1)
+			    샘플수
+    numerals=numerals.astype(np.float32)/255.0
+    res=model.predict(numerals)
+    class_id=np.argmax(res,axis=1)
+    for i in range(5):
+        cv.putText(img,str(class_id[i]),(50+i*100,180),cv.FONT_HERSHEY_SIMPLEX,1,(255,0,0),1)
+
+
+
+BrushSiz=4
+LColor=(0,0,0)
+def writing(event,x,y,flags,param):
+    if event==cv.EVENT_LBUTTONDOWN:
+        cv.circle(img,(x,y),BrushSiz,LColor,-1)
+    # left button을 누르고 움직일 때
+    elif event==cv.EVENT_MOUSEMOVE and flags==cv.EVENT_FLAG_LBUTTON:
+        cv.circle(img,(x,y),BrushSiz,LColor,-1)
+
+
+
+
+reset()
+cv.namedWindow('Writing')
+	윈도우 타이틀
+cv.setMouseCallback('Writing',writing)
+	마우스 이벤트 함수
+while(True):
+    cv.imshow('Writing',img)
+    key=cv.waitKey(1)
+    if key==ord('e'):
+        reset()
+    elif key==ord('s'):
+        show()        
+    elif key==ord('r'):
+        recognition()
+    elif key==ord('q'):
+        break
+    
+cv.destroyAllWindows()
+
+
